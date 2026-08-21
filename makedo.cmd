@@ -1,3 +1,6 @@
+@set "ARG2=%~2"
+@if "%ARG2%"=="" set "ARG2=all"
+
 @if /I "%~1"=="console" goto :console
 @if /I "%~1"=="windows" goto :windows
 goto :usage
@@ -15,10 +18,10 @@ goto :usage
    @goto :eof
 
 :console
-make -f cMakefile 
+make -f cMakefile %ARG2%
    @goto :eof
 
 :windows
-make -f wMakefile 
+make -f wMakefile %ARG2%
    @goto :eof
 

@@ -450,24 +450,21 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       GetWindowRect(hBtn6wnd, &Button6Rect) ;
 
       // debug_dump_rect("DialogRect (Window)", &DialogRect) ;
-
+      
       // syslog("WM_ID: window left: %u, top: %u\n", window_left, window_top);
       if (window_left == 0  ||  window_top == 0) {
          window_left = (DesktopRect.right - DialogRect.right) / 2 ;
          window_top  = (DesktopRect.bottom - DialogRect.bottom) / 2 ;
-         SetWindowPos( hDlgWnd, 
-                       HWND_TOP, 
-                       window_left,
-                       window_top,
-                       0,0, SWP_NOSIZE );
+         // SetWindowPos( hDlgWnd, HWND_TOP, window_left, window_top, 0,0, SWP_NOSIZE );
          inireg.set_param("window_top",  window_top) ;
          inireg.set_param("window_left", window_left) ;
       }
-      else {
+      // else {
          //  restore previously-saved window size/position from the .ini file. 
          // restore_dialog_settings(hwnd);
-         SetWindowPos(hDlgWnd, HWND_TOP, window_left, window_top, 0, 0, SWP_NOSIZE);
-      }
+      //    SetWindowPos(hDlgWnd, HWND_TOP, window_left, window_top, 0, 0, SWP_NOSIZE);
+      // }
+      MoveWindowPos(hDlgWnd, window_left, window_top);
 
       // debug_dump_rect("Button5Rect (Window)", &Button5Rect) ;
       // debug_dump_rect("Button6Rect (Window)", &Button6Rect) ;
