@@ -234,8 +234,9 @@ int registry_iface::GetRegifProfileString(char *field, char *dflt, char *bfr, in
    char *eqptr ;
    int flen ;
    int idx = read_ini_file_into_buffer() ;
-   if (idx < 0)
+   if (idx < 0) {
       return idx;
+   }
 
    if (idx == 0) {
       goto return_default;
@@ -244,16 +245,19 @@ int registry_iface::GetRegifProfileString(char *field, char *dflt, char *bfr, in
    //  see what we read.
    flen = strlen(field) ;
    for (int j=0; j<idx; j++) {
-      // syslog("seek [%s]", field) ;
+      // syslog("%u: seek [%s] in [%s]", j, field, ini_read_bfr[j]) ;
       if (strncmp(field, ini_read_bfr[j], flen) == 0) {
-         // syslog("   %u:[%s]", j, ini_read_bfr[j]) ;
+         // syslog("found %u:[%s]", j, ini_read_bfr[j]) ;
          
          //  if I found the target string, return what we found
          eqptr = strchr(ini_read_bfr[j], '=') ;
-         if (eqptr == 0) 
+         if (eqptr == 0) {
+            syslog("%s: no '=' found\n", ini_read_bfr[j]);
             goto return_default;
+         }
          eqptr++ ;
          strncpy(bfr, eqptr, bfrsize) ;
+         // syslog("return %s as %s[%u]\n", eqptr, bfr, bfrsize);
          return 0;
       }
    }
@@ -322,7 +326,8 @@ void registry_iface::ini_read_tag(char *grp, char *name, unsigned *rval, unsigne
 
    wsprintf(dflt, "%u", dflt_val) ;
    wsprintf(bfr,  "%u", *rval) ;
-   if (GetRegifProfileString(name, dflt, bfr, (int) sizeof(bfr)) == 0) {
+   if (GetRegifProfileString(name, dflt, bfr, (int) sizeof(bfr)) != 0) {
+      // syslog("%s: GetRegifProfileString() failed\n", name);
       *rval = dflt_val ;
       // if (hwndStatus != 0) {
       //    wsprintf(pbfr, "INI read %s: %s not found", grp, name) ;
@@ -339,7 +344,7 @@ void registry_iface::ini_read_tag(char *grp, char *name, double *rval, double df
 
    sprintf(dflt, "%f", dflt_val) ;
    sprintf(bfr,  "%f", *rval) ;
-   if (GetRegifProfileString(name, dflt, bfr, (int) sizeof(bfr)) == 0) {
+   if (GetRegifProfileString(name, dflt, bfr, (int) sizeof(bfr)) != 0) {
       *rval = dflt_val ;
       // if (hwndStatus != 0) {
       //    wsprintf(pbfr, "INI read %s: %s not found", grp, name) ;

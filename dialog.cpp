@@ -31,7 +31,6 @@ static char szClassName[] = "Console Palette Changer V1.05" ;
 #include "commonw.h"
 #include "console.attr.h"
 // #include "ezfont.h"
-#include "config.h"
 #include "regif.h"
 
 #define BUFFER_SIZE 256
@@ -229,7 +228,7 @@ nevermind:
    inireg.get_param("window_top",  &window_top) ;
    inireg.get_param("window_left", &window_left) ;
    
-   syslog("inireg: window left: %u, top: %u\n", window_left, window_top);
+   // syslog("inireg: window left: %u, top: %u\n", window_left, window_top);
 
 }
 
@@ -452,7 +451,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
       // debug_dump_rect("DialogRect (Window)", &DialogRect) ;
 
-   syslog("WM_ID: window left: %u, top: %u\n", window_left, window_top);
+      // syslog("WM_ID: window left: %u, top: %u\n", window_left, window_top);
       if (window_left == 0  ||  window_top == 0) {
          window_left = (DesktopRect.right - DialogRect.right) / 2 ;
          window_top  = (DesktopRect.bottom - DialogRect.bottom) / 2 ;
