@@ -33,10 +33,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#include "common.h"
 #include "regif.h"
-
-// static char pbfr[1024] ;   //  temporary storage buffer
-extern void show_message(HWND hwnd, char* msg);
 
 //*****************************************************************
 #include <stdio.h>
@@ -402,12 +400,10 @@ int registry_iface::get_param(char *var_name, char *value)
    if (strlen(value) >= REG_FIELD_LEN) {
       // if (hwndStatus != 0) 
       //    SetWindowText(hwndStatus, "get_param: default too long") ;
-      show_message(NULL, "get_param_str, too long") ;
+      syslog("get_param_str, too long") ;
       status = EINVAL ;
    } else {
-      // char tempstr[260] ;
-      // sprintf(tempstr, "ini name: %s\n", ininame) ;
-      // OutputDebugString(tempstr) ;
+      // syslog("ini name: %s\n", ininame) ;
       strcpy(pbfr, value) ;
       ini_read_tag(grp_name, var_name, value, REG_FIELD_LEN, pbfr) ;
       status = 0 ;

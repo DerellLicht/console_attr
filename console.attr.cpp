@@ -16,13 +16,13 @@
 #include <malloc.h>
 #include <fcntl.h>
 
+#include "common.h"
 #include "console.attr.h"
 
 typedef unsigned char  u8 ;
 
 #define  FULL_KEY_LEN   1024
 
-char tempstr[260] ;
 static HKEY target_key = HKEY_LOCAL_MACHINE ;
 
 //lint -esym(754, ul2uc_u::us)
@@ -61,42 +61,6 @@ static unsigned default_attr[16] = {
 0x00000080, 0x00800080, 0x00008080, 0x00C0C0C0,
 0x00808080, 0x00FF0000, 0x0000FF00, 0x00FFFF00,
 0x000000FF, 0x00FF00FF, 0x0000FFFF, 0x00FFFFFF } ;
-
-//*************************************************************
-//  each subsequent call to this function overwrites 
-//  the previous report.
-//*************************************************************
-char *get_system_message(void)
-{
-   static char msg[261] ;
-   int slen ;
-
-   LPVOID lpMsgBuf;
-   FormatMessage( 
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-      FORMAT_MESSAGE_FROM_SYSTEM | 
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      GetLastError(),
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-      (LPTSTR) &lpMsgBuf,
-      0, 0);
-   // Process any inserts in lpMsgBuf.
-   // ...
-   // Display the string.
-   strncpy(msg, (char *) lpMsgBuf, 260) ;
-
-   // Free the buffer.
-   LocalFree( lpMsgBuf );
-
-   //  trim the newline off the message before copying it...
-   slen = strlen(msg) ;
-   if (msg[slen-1] == 10  ||  msg[slen-1] == 13) {
-      msg[slen-1] = 0 ;
-   }
-
-   return msg;
-}
 
 //**************************************************************
 static console_info_p add_console_entry(char *path)
@@ -281,12 +245,10 @@ int enum_all_consoles(void)
    char path[FULL_KEY_LEN] ;
    console_info_p cptr = console_list ;
    while (cptr != 0) {
-      // sprintf(tempstr, "enumerate %s: ", cptr->path) ;
-      // OutputDebugString(tempstr) ;
+      // syslog("enumerate %s: ", cptr->path) ;
       strcpy(path, cptr->path) ;
       enum_values(path, cptr) ;
-      // sprintf(tempstr, "%u entries found\n", cptr->attr_count) ;
-      // OutputDebugString(tempstr) ;
+      // syslog("%u entries found\n", cptr->attr_count) ;
       cptr = cptr->next ;
    }
    return 0;
@@ -302,7 +264,7 @@ void restore_default_colors(void)
 //**************************************************************
 static int write_new_attr(console_info_p cptr)
 {
-   char szPath[sizeof(cptr->path)] ;
+   char szPath[1024] ;
    char *pszPath ;
 
    strcpy(szPath, cptr->path) ;
@@ -312,22 +274,19 @@ static int write_new_attr(console_info_p cptr)
    DWORD result = RegOpenKeyEx(target_key, pszPath, 0, KEY_ALL_ACCESS, &hKey) ;
    if (result != ERROR_SUCCESS) {
       // printf("Open: %s: [%u] %s\n", pszPath, (unsigned) result, get_system_message()) ;
-      sprintf(tempstr, "Open: %s: [%u] %s\n", pszPath, (unsigned) result, strerror(result)) ;
-      OutputDebugString(tempstr) ;
+      syslog("Open: %s: [%u] %s\n", pszPath, (unsigned) result, strerror(result)) ;
       return 1 ;
    }
 
    // for (unsigned j=0; j<16; j++) {
-   // sprintf(tempstr, "changing %s\n", cptr->path) ;
-   // OutputDebugString(tempstr) ;
+   // syslog( "changing %s\n", cptr->path) ;
    for (unsigned j=0; j<cptr->attr_count; j++) {
       // wsprintf(pszPath, "Console\\ColorTable%02u", j) ;
       wsprintf(pszPath, "ColorTable%02u", j) ;
 
       LONG wresult = RegSetValueEx(hKey, pszPath, 0, REG_DWORD, (BYTE *) &curr_attr[j], sizeof(unsigned)) ;
       if (wresult != ERROR_SUCCESS) {
-         sprintf(tempstr, "SetValue: %s: %s\n", pszPath, get_system_message()) ;
-         OutputDebugString(tempstr) ;
+         syslog("SetValue: %s: %s\n", pszPath, get_system_message()) ;
       } else {
          // printf("SetValue: %s: 0x%08X => 0x%08X\n", pszPath, console_attr[j], curr_attr[j]) ;
          // printf("SetValue: %s: 0x%08X => 0x%08X\n", pszPath, cptr->attr[j], curr_attr[j]) ;
@@ -346,15 +305,14 @@ int write_all_consoles(void)
    // puts("new attribute data") ;
    // dump_palette_data() ;
    // puts("") ;
-   // sprintf(tempstr, "console list: 0x%08X\n", (unsigned) console_list) ;
+   // syslog( "console list: 0x%08X\n", (unsigned) console_list) ;
    // OutputDebugString(tempstr) ;
 
    //  now iterate over list
    console_info_p cptr = console_list ;
    while (cptr != 0) {
       if (cptr->attr_count != 0) {
-         // sprintf(tempstr, "changing %s\n", cptr->path) ;
-         // OutputDebugString(tempstr) ;
+         // syslog( "changing %s\n", cptr->path) ;
          write_new_attr(cptr) ;
       }
       cptr = cptr->next ;
@@ -401,15 +359,13 @@ int write_palette_file(char *palette_name, double brighten)
 
    int hdl = open(palette_name, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0666) ;
    if (hdl < 0) {
-      wsprintf(tempstr, "open (write): %s: %s\n", palette_name, get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      wsyslog( "open (write): %s: %s\n", palette_name, get_system_message()) ;
       return errno ;
    }
    int wrbytes = write(hdl, pdata, sizeof(pdata)) ;
    close(hdl) ;
    if (wrbytes != sizeof(pdata)) {
-      wsprintf(tempstr, "write returned %d vs %u", wrbytes, sizeof(pdata)) ;
-      OutputDebugString(tempstr) ;
+      wsyslog( "write returned %d vs %u", wrbytes, sizeof(pdata)) ;
       return EINVAL ;
    }
    return 0;
@@ -423,16 +379,14 @@ int read_palette_file(char *palette_name, double brighten)
    unsigned utemp ;
    int hdl = open(palette_name, O_BINARY | O_RDONLY) ;
    if (hdl < 0) {
-      wsprintf(tempstr, "open (read): %s: %s\n", palette_name, get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      wsyslog( "open (read): %s: %s\n", palette_name, get_system_message()) ;
       return errno ;
    }
    int rdbytes = read(hdl, pdata, sizeof(pdata)+1) ;
    close(hdl) ;
    if (rdbytes != 64) {
       // return -1;
-      wsprintf(tempstr, "read: %s: %d vs %d\n", palette_name, rdbytes, sizeof(pdata)) ;
-      OutputDebugString(tempstr) ;
+      wsyslog( "read: %s: %d vs %d\n", palette_name, rdbytes, sizeof(pdata)) ;
       return EINVAL ;
    }
 

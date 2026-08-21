@@ -28,6 +28,7 @@ static char szClassName[] = "Console Palette Changer V1.04" ;
 #include <htmlhelp.h>
 
 #include "resource.h"
+#include "common.h"
 #include "console.attr.h"
 #include "ezfont.h"
 #include "regif.h"
@@ -82,12 +83,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 //       drect->left, drect->top, drect->right, drect->bottom) ;
 //    OutputDebugString(tempstr) ;
 // }
-
-//*****************************************************************
-void show_message(HWND hwnd, char* msg)
-{
-   MessageBox(hwnd, msg, "warning message", MB_OK | MB_ICONINFORMATION) ;
-}
 
 //*****************************************************************
 static char chmname[1024] ;

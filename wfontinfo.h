@@ -7,7 +7,8 @@ typedef struct _CONSOLE_FONT_INFO {
 
 // only in Win2k+  (use FindWindow for NT4)
 HWND WINAPI GetConsoleWindow(void);
-BOOL WINAPI GetCurrentConsoleFont(
+// BOOL WINAPI GetCurrentConsoleFont(
+extern "C" WINBASEAPI BOOL WINAPI GetCurrentConsoleFont(
   HANDLE hConsoleOutput,
   BOOL bMaximumWindow,
   PCONSOLE_FONT_INFO lpConsoleCurrentFont

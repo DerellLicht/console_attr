@@ -1,14 +1,14 @@
 //*****************************************************************
 // SETCONSOLEINFO.CPP
 //
-//	Undocumented method to set console attributes
+// Undocumented method to set console attributes
 //  at runtime including console palette (NT4, 2000, XP).
 //
-//	VOID WINAPI SetConsolePalette(COLORREF palette[16])
+// VOID WINAPI SetConsolePalette(COLORREF palette[16])
 //
-//	For Vista use the newly documented SetConsoleScreenBufferEx API
+// For Vista use the newly documented SetConsoleScreenBufferEx API
 //
-//	www.catch22.net
+// www.catch22.net
 // 
 //*****************************************************************
 //  DDM notes (02/24/07 10:18)
@@ -22,29 +22,22 @@
 
 static char *VerStr = "Set Console Attributes, Version 1.03" ;
 
-#define WIN32_LEAN_AND_MEAN // this will assume smaller exe... NOT ...
-#define  _WIN32_WINNT 0x0500
+// #define WIN32_LEAN_AND_MEAN // this will assume smaller exe... NOT ...
+// #define  _WIN32_WINNT 0x0500
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdarg>
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <io.h>
 
+#include "common.h"
 // #include "wfontinfo.h"
-
-typedef unsigned char u8;
-
-typedef union ul2uc_u {
-   unsigned int   ul ;
-   unsigned char  uc[4] ;
-} ul2uc_t ;
 
 #define  STD_FILE_LEN   1024
 
-static char tempstr[81] ;
 static char my_path[STD_FILE_LEN] = "" ;
 static char orig_name[STD_FILE_LEN] = "" ;
 static char bkup_name[STD_FILE_LEN] = "" ;
@@ -82,7 +75,7 @@ extern "C" WINBASEAPI COORD WINAPI GetConsoleFontSize(
 );
 
 // Undocumented console message
-#define WM_SETCONSOLEINFO			(WM_USER+201)
+#define WM_SETCONSOLEINFO        (WM_USER+201)
 
 #pragma pack(push, 1)
 
@@ -125,138 +118,96 @@ typedef struct _CONSOLE_INFO
 
 #pragma pack(pop)
 
-//*************************************************************
-//  each subsequent call to this function overwrites 
-//  the previous report.
-//*************************************************************
-char *get_system_message(void)
-{
-   static char msg[261] ;
-   int slen ;
-
-   LPVOID lpMsgBuf;
-   FormatMessage( 
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-      FORMAT_MESSAGE_FROM_SYSTEM | 
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      GetLastError(),
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-      (LPTSTR) &lpMsgBuf,
-      0, 0);
-   // Process any inserts in lpMsgBuf.
-   // ...
-   // Display the string.
-   strncpy(msg, (char *) lpMsgBuf, 260) ;
-
-   // Free the buffer.
-   LocalFree( lpMsgBuf );
-
-   //  trim the newline off the message before copying it...
-   slen = strlen(msg) ;
-   if (msg[slen-1] == 10  ||  msg[slen-1] == 13) {
-      msg[slen-1] = 0 ;
-   }
-
-   return msg;
-}
-
 //
-//	Wrapper around WM_SETCONSOLEINFO. We need to create the
+// Wrapper around WM_SETCONSOLEINFO. We need to create the
 //  necessary section (file-mapping) object in the context of the
 //  process which owns the console, before posting the message
 //
 BOOL SetConsoleInfo(HWND hwndConsole, CONSOLE_INFO *pci)
 {
-	DWORD   dwConsoleOwnerPid;
-	HANDLE  hProcess;
-	HANDLE	hSection, hDupSection;
-	PVOID   ptrView = 0;
-	HANDLE  hThread;
-	
-	//
-	//	Open the process which "owns" the console
-	//	
-	GetWindowThreadProcessId(hwndConsole, &dwConsoleOwnerPid);
-	
-	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwConsoleOwnerPid);
+   DWORD   dwConsoleOwnerPid;
+   HANDLE  hProcess;
+   HANDLE   hSection, hDupSection;
+   PVOID   ptrView = 0;
+   HANDLE  hThread;
+   
+   //
+   // Open the process which "owns" the console
+   // 
+   GetWindowThreadProcessId(hwndConsole, &dwConsoleOwnerPid);
+   
+   hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwConsoleOwnerPid);
    if (hProcess == NULL) {
-      wsprintf(tempstr, "OpenProcess: %s\n", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("OpenProcess: %s\n", get_system_message()) ;
       return FALSE;
    }
 
-	//
-	// Create a SECTION object backed by page-file, then map a view of
-	// this section into the owner process so we can write the contents 
-	// of the CONSOLE_INFO buffer into it
-	//
-	hSection = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, pci->Length, 0);
+   //
+   // Create a SECTION object backed by page-file, then map a view of
+   // this section into the owner process so we can write the contents 
+   // of the CONSOLE_INFO buffer into it
+   //
+   hSection = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, pci->Length, 0);
    if (hSection == NULL) {
-      wsprintf(tempstr, "CreateFileMapping: %s\n", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("CreateFileMapping: %s\n", get_system_message()) ;
       return FALSE;
    }
 
-	//
-	//	Copy our console structure into the section-object
-	//
-	ptrView = MapViewOfFile(hSection, FILE_MAP_WRITE|FILE_MAP_READ, 0, 0, pci->Length);
+   //
+   // Copy our console structure into the section-object
+   //
+   ptrView = MapViewOfFile(hSection, FILE_MAP_WRITE|FILE_MAP_READ, 0, 0, pci->Length);
    if (ptrView == NULL) {
-      wsprintf(tempstr, "MapViewOfFile: %s\n", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("MapViewOfFile: %s\n", get_system_message()) ;
       return FALSE;
    }
 
-	memcpy(ptrView, pci, pci->Length);
+   memcpy(ptrView, pci, pci->Length);
 
    if (!UnmapViewOfFile(ptrView)) {
-      wsprintf(tempstr, "UnmapViewOfFile: %s\n", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("UnmapViewOfFile: %s\n", get_system_message()) ;
       return FALSE;
    }
 
-	//
-	//	Map the memory into owner process
-	//
+   //
+   // Map the memory into owner process
+   //
    if (!DuplicateHandle(GetCurrentProcess(), hSection, hProcess, &hDupSection, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
-      wsprintf(tempstr, "DuplicateHandle: %s\n", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("DuplicateHandle: %s\n", get_system_message()) ;
       return FALSE;
    }
 
-	//  Send console window the "update" message
-	SendMessage(hwndConsole, WM_SETCONSOLEINFO, (WPARAM)hDupSection, 0);
+   //  Send console window the "update" message
+   SendMessage(hwndConsole, WM_SETCONSOLEINFO, (WPARAM)hDupSection, 0);
 
-	//
-	// clean up
-	//
+   //
+   // clean up
+   //
    hThread = CreateRemoteThread(hProcess, 0, 0, 
       (LPTHREAD_START_ROUTINE)CloseHandle, hDupSection, 0, 0);
    if (hThread == NULL) {
-      wsprintf(tempstr, "CreateRemoteThread: %s\n", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("CreateRemoteThread: %s\n", get_system_message()) ;
       return FALSE;
    }
 
-	CloseHandle(hThread);
-	CloseHandle(hSection);
-	CloseHandle(hProcess);
+   CloseHandle(hThread);
+   CloseHandle(hSection);
+   CloseHandle(hProcess);
 
-	return TRUE;
+   return TRUE;
 }
 
 //
-//	Fill the CONSOLE_INFO structure with information
+// Fill the CONSOLE_INFO structure with information
 //  about the current console window
 //
 static void GetConsoleSizeInfo(CONSOLE_INFO *pci)
 {
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
+   CONSOLE_SCREEN_BUFFER_INFO csbi;
 
-	HANDLE hConsoleOut = GetStdHandle(STD_OUTPUT_HANDLE);
+   HANDLE hConsoleOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	GetConsoleScreenBufferInfo(hConsoleOut, &csbi);
+   GetConsoleScreenBufferInfo(hConsoleOut, &csbi);
 
    pci->ScreenBufferSize = csbi.dwSize;
    pci->WindowSize.X     = csbi.srWindow.Right - csbi.srWindow.Left + 1;
@@ -297,24 +248,24 @@ static void GetConsoleFontInfo(CONSOLE_INFO *pci)
 
 // Set palette of current console
 //
-//	palette should be of the form:
+// palette should be of the form:
 //
 // COLORREF DefaultColors[16] = 
 // {
-//	0x00000000, 0x00800000, 0x00008000, 0x00808000,
-//	0x00000080, 0x00800080, 0x00008080, 0x00c0c0c0, 
-//	0x00808080,	0x00ff0000, 0x0000ff00, 0x00ffff00,
-//	0x000000ff, 0x00ff00ff,	0x0000ffff, 0x00ffffff
+// 0x00000000, 0x00800000, 0x00008000, 0x00808000,
+// 0x00000080, 0x00800080, 0x00008080, 0x00c0c0c0, 
+// 0x00808080, 0x00ff0000, 0x0000ff00, 0x00ffff00,
+// 0x000000ff, 0x00ff00ff, 0x0000ffff, 0x00ffffff
 // };
 //
 VOID WINAPI SetConsolePalette(COLORREF palette[16])
 {
-	CONSOLE_INFO ci = { sizeof(ci) };
-	int i;
+   CONSOLE_INFO ci = { sizeof(ci) };
+   int i;
    HWND hwndConsole = GetConsoleWindow();
 
-	// get current size/position settings rather than using defaults..
-	GetConsoleSizeInfo(&ci);
+   // get current size/position settings rather than using defaults..
+   GetConsoleSizeInfo(&ci);
 
    GetConsoleFontInfo(&ci);
 
@@ -331,16 +282,16 @@ VOID WINAPI SetConsolePalette(COLORREF palette[16])
    ci.HistoryBufferSize    = 50;
    ci.NumberOfHistoryBuffers  = 4;
 
-	// colour table
-	for(i = 0; i < 16; i++)
-		ci.ColorTable[i] = palette[i];
+   // colour table
+   for(i = 0; i < 16; i++)
+      ci.ColorTable[i] = palette[i];
 
    ci.CodePage             = 0;//0x352;
-	ci.Hwnd						= hwndConsole;
+   ci.Hwnd                 = hwndConsole;
 
-	lstrcpyW(ci.ConsoleTitle, L"");
+   lstrcpyW(ci.ConsoleTitle, L"");
 
-	SetConsoleInfo(hwndConsole, &ci);
+   SetConsoleInfo(hwndConsole, &ci);
 }
 
 //**************************************************************
@@ -362,16 +313,14 @@ int read_palette_file(char *palette_name, double brighten)
    unsigned utemp, j ;
    int hdl = _open(palette_name, O_BINARY | O_RDONLY) ;
    if (hdl < 0) {
-      wsprintf(tempstr, "open (read): %s: %s\n", palette_name, get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("open (read): %s: %s\n", palette_name, get_system_message()) ;
       return errno ;
    }
    rdbytes = _read(hdl, pdata, sizeof(pdata)+1) ;
    _close(hdl) ;
    if (rdbytes != 64) {
       // return -1;
-      wsprintf(tempstr, "read: %s: %d vs %d\n", palette_name, rdbytes, sizeof(pdata)) ;
-      OutputDebugString(tempstr) ;
+      syslog("read: %s: %d vs %d\n", palette_name, rdbytes, sizeof(pdata)) ;
       return EINVAL ;
    }
 
@@ -441,33 +390,6 @@ static void update_palette_file(char *palette_file)
 
    sprintf(sptr, "palettes\\%s", palette_file) ;
    strcpy(palette_file, tbfr) ;
-}
-
-//************************************************************************
-static int file_exists(char *fname)
-{
-   struct stat st ;
-   if (stat(fname, &st) == 0)
-      return 1;
-   return 0;
-}
-
-//************************************************************************
-static char *skip_spaces(char *inpstr)
-{
-   while (*inpstr == ' '  ||  *inpstr == '\t')
-      inpstr++ ;
-   return inpstr;
-}
-
-//************************************************************************
-static char *next_field(char *inpstr)
-{
-   while (*inpstr != ' '  &&  *inpstr != 0)
-      inpstr++ ;
-   while (*inpstr == ' ')
-      inpstr++ ;
-   return inpstr;
 }
 
 //************************************************************************

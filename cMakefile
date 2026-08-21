@@ -1,11 +1,9 @@
-# makefile for console_attr.exe
+# makefile for consattr.exe console program
 # SHELL=cmd.exe
 USE_DEBUG = NO
 USE_64BIT = NO
-USE_UNICODE = YES
-USE_CLANG = NO
-# use -static for clang/llvm and cygwin/mingw
-USE_STATIC = NO
+USE_UNICODE = NO
+USE_CLANG = YES
 
 include der_libs\tool_select.mak 
 
@@ -39,7 +37,7 @@ ifeq ($(USE_STATIC),YES)
 LFLAGS += -static
 endif
 
-CPPSRC=dialog.cpp console.attr.cpp regif.cpp ezfont.cpp\
+CPPSRC=setconsoleinfo.cpp \
 der_libs/common_funcs.cpp 
 # der_libs/qualify.cpp 
 
@@ -49,7 +47,7 @@ OBJS = $(CPPSRC:.cpp=.o)
 
 LIBS=-lcomdlg32
 
-BIN = console_attr
+BIN = consattr
 BINS = $(BIN).exe
 
 #**************************************************************************
@@ -86,13 +84,7 @@ depend:
 $(BINS): $(OBJS)
 	$(TOOLS)/$(GNAME) $(OBJS) $(LFLAGS) -o $(BINS) $(LIBS) 
 
-dlgres.o: dlgres.rc resource.h
-	$(TOOLS)\$(WRNAME) $< -O coff -o $@
-
 # DO NOT DELETE
 
-dialog.o: resource.h der_libs/common.h console.attr.h ezfont.h regif.h
-console.attr.o: der_libs/common.h console.attr.h
-regif.o: der_libs/common.h regif.h
-ezfont.o: ezfont.h
+setconsoleinfo.o: der_libs/common.h
 der_libs/common_funcs.o: der_libs/common.h
