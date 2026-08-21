@@ -30,7 +30,7 @@ static char szClassName[] = "Console Palette Changer V1.04" ;
 #include "resource.h"
 #include "console.attr.h"
 #include "ezfont.h"
-#include "regif.hpp"
+#include "regif.h"
 
 //lint -e527   code Unreachable
 

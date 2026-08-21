@@ -33,7 +33,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "regif.hpp"
+#include "regif.h"
 
 // static char pbfr[1024] ;   //  temporary storage buffer
 extern void show_message(HWND hwnd, char* msg);
