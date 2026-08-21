@@ -1,0 +1,87 @@
+[
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "dialog.cpp",
+   "-o",
+   "dialog.o"
+  ],
+  "file": "dialog.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "console.attr.cpp",
+   "-o",
+   "console.attr.o"
+  ],
+  "file": "console.attr.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "regif.cpp",
+   "-o",
+   "regif.o"
+  ],
+  "file": "regif.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "ezfont.cpp",
+   "-o",
+   "ezfont.o"
+  ],
+  "file": "ezfont.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "der_libs/common_funcs.cpp",
+   "-o",
+   "der_libs/common_funcs.o"
+  ],
+  "file": "der_libs/common_funcs.cpp"
+ }
+]
