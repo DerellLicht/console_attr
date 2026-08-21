@@ -37,13 +37,14 @@ ifeq ($(USE_STATIC),YES)
 LFLAGS += -static
 endif
 
-CPPSRC=dialog.cpp console.attr.cpp regif.cpp ezfont.cpp\
-der_libs/common_funcs.cpp 
+CPPSRC=dialog.cpp console.attr.cpp regif.cpp \
+der_libs/common_funcs.cpp \
+der_libs/common_win.cpp 
 # der_libs/qualify.cpp 
 
 LINTFILES=lintdefs.cpp lintdefs.ref.h 
 
-OBJS = $(CPPSRC:.cpp=.o)
+OBJS = $(CPPSRC:.cpp=.o) dlgres.o
 
 LIBS=-lcomdlg32 -lgdi32 -lhtmlhelp
 
@@ -78,8 +79,9 @@ check:
 lint:
 	cmd /C "c:\lint9\lint-nt +v -width(160,4) $(LiFLAGS) -ic:\lint9 mingw.lnt -os(_lint.tmp) $(LINTFILES) $(CPPSRC)"
 
+# use [make -fwMakefile depend] to reach this
 depend: 
-	makedepend $(IFLAGS) $(CPPSRC)
+	makedepend -fwMakefile $(IFLAGS) $(CPPSRC)
 
 $(BINS): $(OBJS)
 	$(TOOLS)/$(GNAME) $(OBJS) $(LFLAGS) -o $(BINS) $(LIBS) 
@@ -89,8 +91,9 @@ dlgres.o: dlgres.rc resource.h
 
 # DO NOT DELETE
 
-dialog.o: resource.h der_libs/common.h console.attr.h ezfont.h regif.h
+dialog.o: resource.h der_libs/common.h der_libs/commonw.h console.attr.h
+dialog.o: config.h regif.h
 console.attr.o: der_libs/common.h console.attr.h
 regif.o: der_libs/common.h regif.h
-ezfont.o: ezfont.h
 der_libs/common_funcs.o: der_libs/common.h
+der_libs/common_win.o: der_libs/common.h der_libs/commonw.h

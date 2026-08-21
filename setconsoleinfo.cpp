@@ -234,8 +234,7 @@ static void GetConsoleFontInfo(CONSOLE_INFO *pci)
    pci->FontSize.X = fsize.X ;
    pci->FontSize.Y = fsize.Y ;
 
-   // wsprintf(tempstr, "Font Size= X%u Y%u\n", fsize.X, fsize.Y) ;
-   // OutputDebugString(tempstr) ; 
+   // syslog("Font Size= X%u Y%u\n", fsize.X, fsize.Y) ;
 
    // set these to zero to keep current settings 
    // pci->FontFamily = 0x30;//FF_MODERN|FIXED_PITCH;//0x30;

@@ -57,8 +57,7 @@ int registry_iface::find_exe_location(void)
          strcpy(strptr, ".ini") ;
       }
    } else {
-      wsprintf(rtempstr, "GetModuleFileName: %s", regif_get_system_message()) ;
-      OutputDebugString(rtempstr) ;
+      syslog("GetModuleFileName: %s", regif_get_system_message()) ;
       strcpy(ininame, "c:\\dummy_ini.ini") ;
    }
 
@@ -238,17 +237,16 @@ int registry_iface::GetRegifProfileString(char *field, char *dflt, char *bfr, in
    if (idx < 0)
       return idx;
 
-   if (idx == 0) 
+   if (idx == 0) {
       goto return_default;
+   }
 
    //  see what we read.
    flen = strlen(field) ;
    for (int j=0; j<idx; j++) {
-      // wsprintf(rtempstr, "seek [%s]", field) ;
-      // OutputDebugString(rtempstr) ;
+      // syslog("seek [%s]", field) ;
       if (strncmp(field, ini_read_bfr[j], flen) == 0) {
-         // wsprintf(rtempstr, "   %u:[%s]", j, ini_read_bfr[j]) ;
-         // OutputDebugString(rtempstr) ;
+         // syslog("   %u:[%s]", j, ini_read_bfr[j]) ;
          
          //  if I found the target string, return what we found
          eqptr = strchr(ini_read_bfr[j], '=') ;
@@ -307,19 +305,14 @@ void registry_iface::ini_read_tag(char *grp, char *name, char *rval, int rval_le
 {
    int rlen = GetRegifProfileString(name, dflt, rval, rval_len) ;
    if (rlen == 0) {
-      // char tempstr[80] ;
-      // sprintf(tempstr, "ini_read_tag: %s", regif_get_system_message()) ;
-      // show_message(NULL, tempstr) ;
+      // syslog("ini_read_tag: %s", regif_get_system_message()) ;
       // if (hwndStatus != 0) {
       //    wsprintf(pbfr, "INI read %s: %s not found", grp, name) ;
       //    SetWindowText(hwndStatus, pbfr) ;
       // }
    } else {
-      // char tempstr[80] ;
-      // sprintf(tempstr, "%s, %s, %s\n", grp, name, rval) ;
-      // OutputDebugString(tempstr) ;
-      // sprintf(tempstr, "GetRegifProfileString returned %u\n", (unsigned) rlen) ;
-      // OutputDebugString(tempstr) ;
+      // syslog("%s, %s, %s\n", grp, name, rval) ;
+      // syslog("GetRegifProfileString returned %u\n", (unsigned) rlen) ;
    }
 }  //lint !e715
 

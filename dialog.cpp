@@ -14,23 +14,24 @@
 // 1.02  09/29/06    Switch to different binary file format
 // 1.03  10/09/06    Add button for help dialog
 // 1.04  02/23/07    Avoid multiple instances
+// 1.05  08/21/26    Porting to modern clang++
 //**************************************************************************
 
-static char szClassName[] = "Console Palette Changer V1.04" ;
+static char szClassName[] = "Console Palette Changer V1.05" ;
 
 #include <windows.h>
 #include <stdio.h>   //  sprintf, needed for double
 #include <stdlib.h>  //  _MAX_PATH
 #include <sys/stat.h>
-#undef  WINVER
-#define WINVER 0x0500
 #include <shlobj.h>
 #include <htmlhelp.h>
 
 #include "resource.h"
 #include "common.h"
+#include "commonw.h"
 #include "console.attr.h"
-#include "ezfont.h"
+// #include "ezfont.h"
+#include "config.h"
 #include "regif.h"
 
 #define BUFFER_SIZE 256
@@ -43,6 +44,18 @@ static NOTIFYICONDATA NotifyIconData;
 
 static RECT DialogRect;
 static RECT Edit5Rect;
+
+uint window_top = 0;
+uint window_left = 0;
+//****************************************************************************
+//  debug: message-reporting data
+//  NOTE: setting constants here, won't work!!
+//        This value is over-written by INI file!!
+//****************************************************************************
+//    if (dbg_flags & DBG_WINMSGS) {
+uint dbg_flags =
+               // DBG_WINMSGS |
+               0 ;
 
 // static HWND PaletteEdithwnd[16] = {
 //    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } ;
@@ -88,129 +101,15 @@ static char chmname[1024] ;
 
 static int find_chm_location(void)
 {
-   static char cmd_line_copy[260] ;
-   static char curpath[1024] ;
-   char refstr[4] = { ' ', '\n', '\r', 0 } ;
-   char *strptr ;
    // struct stat st ;
 
-   //  see if we can find and show parent filename
-   // if (GetModuleFileName(g_hInst, filename, sizeof(filename)) == 0) {
-   if (GetModuleFileName(NULL, chmname, sizeof(chmname)) != 0) {
-      strptr = strrchr(chmname, '.') ;
-      //  if no extention on existing path, just concat the name
-      if (strptr == 0) {
-         strcat(chmname, ".chm") ;
-         // chmmode = 1 ;  //  DEBUG 
-      } 
-      //  if extension *is* present, overwrite with .chm
-      else {
-         strcpy(strptr, ".chm") ;
-         // chmmode = 2 ;  //  DEBUG 
-      }
-   } 
-   //  if GetModuleFileName fails, then we'll use the old method
-   else {
-      //  find our chm file.
-      //  In some cases (Win98SE), GetCommandLine() returns its
-      //  result enclosed in double-quotes!!  We need to deal with that.
-      strncpy(cmd_line_copy, GetCommandLine(), sizeof(cmd_line_copy)) ;
-      // fprintf(fd, "cmdline:[%s]\n", cmd_line_copy) ;
-      if (cmd_line_copy[0] == '"') {
-         strcpy(cmd_line_copy, &cmd_line_copy[1]) ;
-         // fprintf(fd, "cmdline1:[%s]\n", cmd_line_copy) ;
-         strptr = cmd_line_copy ;
-         while (1) {
-            if (*strptr == '"') {
-               strcpy(strptr, strptr+1) ;
-               break;
-            }
-            if (*strptr == 0)
-               break;
-            strptr++ ;
-         }
-         // fprintf(fd, "cmdline2:[%s]\n", cmd_line_copy) ;
-      }
-
-      //  the results of 
-      strptr = strpbrk(cmd_line_copy, refstr) ;
-      if (strptr != 0) {
-         *strptr = 0 ;
-      }
-      //  interesting lessons from WinNT 4.0:
-      //  If the OS is WinNT 4.0, and;
-      //  If the executable file is located in the current directory,
-      //  THEN:
-      //    argv[0] does NOT contain the fully-qualified
-      //    path of the EXE, it *only* contains the EXE name.
-      //    In all other situations, argv[0] is fully qualified!!
-      //  
-      //  P.S.  While we're here, derive default chm filename also
-      strptr = strrchr(cmd_line_copy, '\\') ;
-      //  no path present
-      if (strptr == 0) {
-         //*******************************************************************
-         //  The original version of this program passed NULL to 
-         //  SearchPath(), and failed because the actual search path
-         //  was not what was expected:
-         //*******************************************************************
-         //  Note from MSDN:
-         //  
-         //  Pointer to a null-terminated string that specifies the path to be 
-         //  searched for the file.  If this parameter is NULL, the function 
-         //  searches for a matching file in the following directories in the 
-         //  following sequence: 
-         //  
-         //  - The directory from which the application loaded. 
-         //    (DDM: I wish I could find this directly!!)
-         //  - The current directory. 
-         //  - Windows 95: The Windows system directory. 
-         //    Use the GetSystemDirectory function to get the path of this dir.
-         //  - Windows NT: The 32-bit Windows system directory. 
-         //    Use the GetSystemDirectory function to get the path of this 
-         //    directory. The name of this directory is SYSTEM32. 
-         // 
-         //  - Windows NT: The 16-bit Windows system directory. There is no 
-         //    Win32 function that obtains the path of this directory, but 
-         //    it is searched. The name of this directory is SYSTEM. 
-         //  - The Windows directory. Use theGetWindowsDirectory function to get 
-         //    the path of this directory. 
-         //  - The directories that are listed in the PATH environment variable. 
-         //*******************************************************************
-         //  Later note:
-         //  Note that using getenv("PATH") directly does *not* 
-         //  search the current directory!!  
-         //  Thus, I'll manually prepend it here...
-         //*******************************************************************
-         wsprintf(curpath, ".;%s", getenv("PATH")) ;
-         SearchPath(curpath, cmd_line_copy, ".exe", _MAX_PATH, chmname, NULL) ;
-      }
-      else {
-         //  pick up chm filename
-         strcpy(chmname, cmd_line_copy) ;
-      }
-      strptr = strrchr(chmname, '\\') ;
-      if (strptr != 0) {
-         char *p ;
-
-         strptr++ ;  //  skip past the backslash
-         p = strchr(strptr, '.') ;
-         //  if no extention on existing path, just concat the name
-         if (p == 0) {
-            strcat(chmname, ".chm") ;
-            // chmmode = 1 ;  //  DEBUG 
-         } 
-         //  if extension *is* present, overwrite with .chm
-         else {
-            strcpy(p, ".chm") ;
-            // chmmode = 2 ;  //  DEBUG 
-         }
-      } else {
-         //  this really shouldn't happen
-         strcat(chmname, ".chm") ;
-         // chmmode = 3 ;  //  DEBUG 
-      }
+   int result = derive_filename_from_exec(chmname, ".chm") ;
+   if (result != 0) {
+      syslog("could not resolve .chm name\n");
+      return result;
    }
+   // syslog("chm name: %s\n", chmname);
+   // chm name: D:\SourceCode\Git\console_attr\console_attr.chm
 
    //  lastly, see if file already exists
    // int result = stat(chmname, &st) ;
@@ -298,7 +197,7 @@ static void read_config_data(void)
       //  just leave the default name in place
       if (GetModuleFileName(NULL, rcdtemp, sizeof(rcdtemp)) == 0) 
       {
-         OutputDebugString("fault A") ;
+         syslog("fault A\n") ;
          goto nevermind;
       }
       struct stat st ;
@@ -306,7 +205,7 @@ static void read_config_data(void)
       strptr = strrchr(rcdtemp, '\\') ;
       if (strptr == 0) 
       {
-         OutputDebugString("fault B") ;
+         syslog("fault B\n") ;
          goto nevermind;
       }
       // strcpy(strptr, ".ini") ;
@@ -314,7 +213,7 @@ static void read_config_data(void)
       strcpy(strptr, "palettes") ;
       if (stat(rcdtemp, &st) != 0)
       {
-         OutputDebugString("fault C") ;
+         syslog("fault C\n") ;
          goto nevermind;
       }
       //  okay, the path exists... append the default DOS.PAL 
@@ -327,6 +226,10 @@ nevermind:
    inireg.get_param("palette", palette_filename) ;
    inireg.get_param("startpath", starting_path) ;
    inireg.get_param("brighten", &brighten) ;
+   inireg.get_param("window_top",  &window_top) ;
+   inireg.get_param("window_left", &window_left) ;
+   
+   syslog("inireg: window left: %u, top: %u\n", window_left, window_top);
 
 }
 
@@ -501,24 +404,17 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
    case WM_CTLCOLORDLG:
        return (LONG) g_hbrBackground;
 
-   case WM_CTLCOLORSTATIC:
-   {
-       HDC hdcStatic = (HDC)wParam;
-       SetTextColor(hdcStatic, RGB(0, 0, 0));
-       //  Error: this was passing a color index, NOT a COLORREF !!
-       // SetBkColor(hdcStatic, (COLOR_WINDOW + 1));
-       SetBkColor(hdcStatic, (GetSysColor(COLOR_WINDOW+1)));
-       SetBkMode(hdcStatic, TRANSPARENT);
-       return (LONG) g_hbrBackground;
-   }
-   break;
-
    case WM_INITDIALOG:
       {
       RECT DesktopRect;
       RECT Button5Rect;
       RECT Button6Rect;
 
+      //  Add program icons to title bar
+      SetClassLongA(hDlgWnd, GCL_HICON,   (LONG) LoadIcon(GetModuleHandle(nullptr), (LPCSTR) IDI_ICON));
+      SetClassLongA(hDlgWnd, GCL_HICONSM, (LONG) LoadIcon(GetModuleHandle(nullptr), (LPCSTR) IDI_ICON));
+
+      get_monitor_dimens(hDlgWnd);
       //  at this point, we should resolve %system_path% into the
       //  real system path, to properly set up cmd_proc_filename
 
@@ -532,7 +428,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       int result = read_palette_file(palette_filename, brighten) ;
       if (result != 0) {
          // show_message(NULL, "cannot read palette file") ;
-         syslog("read_palette_file: %s: %d\n", palette_filename, result) ;
+         syslog("Error: read_palette_file: %s: %d\n", palette_filename, result) ;
          restore_default_colors();
       }
       build_console_list() ;
@@ -556,14 +452,23 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
       // debug_dump_rect("DialogRect (Window)", &DialogRect) ;
 
-      SetWindowPos( hDlgWnd, 
-                    HWND_TOP, 
-                    (DesktopRect.right - DialogRect.right) / 2,
-                    (DesktopRect.bottom - DialogRect.bottom) / 2,
-                    0,0, SWP_NOSIZE );
-
-      SendMessage(hDlgWnd, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON)));
-      SendMessage(hDlgWnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON)));
+   syslog("WM_ID: window left: %u, top: %u\n", window_left, window_top);
+      if (window_left == 0  ||  window_top == 0) {
+         window_left = (DesktopRect.right - DialogRect.right) / 2 ;
+         window_top  = (DesktopRect.bottom - DialogRect.bottom) / 2 ;
+         SetWindowPos( hDlgWnd, 
+                       HWND_TOP, 
+                       window_left,
+                       window_top,
+                       0,0, SWP_NOSIZE );
+         inireg.set_param("window_top",  window_top) ;
+         inireg.set_param("window_left", window_left) ;
+      }
+      else {
+         //  restore previously-saved window size/position from the .ini file. 
+         // restore_dialog_settings(hwnd);
+         SetWindowPos(hDlgWnd, HWND_TOP, window_left, window_top, 0, 0, SWP_NOSIZE);
+      }
 
       // debug_dump_rect("Button5Rect (Window)", &Button5Rect) ;
       // debug_dump_rect("Button6Rect (Window)", &Button6Rect) ;
@@ -638,6 +543,29 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
    }
    break;
 
+   case WM_CTLCOLORSTATIC:
+   {
+       HDC hdcStatic = (HDC)wParam;
+       SetTextColor(hdcStatic, RGB(0, 0, 0));
+       //  Error: this was passing a color index, NOT a COLORREF !!
+       // SetBkColor(hdcStatic, (COLOR_WINDOW + 1));
+       SetBkColor(hdcStatic, (GetSysColor(COLOR_WINDOW+1)));
+       SetBkMode(hdcStatic, TRANSPARENT);
+       return (LONG) g_hbrBackground;
+   }
+   break;
+
+   case WM_EXITSIZEMOVE:
+      {
+      RECT rect ;
+      GetWindowRect(hDlgWnd, &rect);
+      window_top = rect.top ;
+      window_left = rect.left ;
+      inireg.set_param("window_top",  window_top) ;
+      inireg.set_param("window_left", window_left) ;
+      }
+      break ;
+   
    case WM_SETFOCUS:
       // syslog("%u: WM_SETFOCUS", (unsigned) hDlgWnd) ;
       
@@ -835,7 +763,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          if (strptr != 0) {
             strptr++ ;  //  leave the backslash in place
             *strptr = 0 ;  //  strip off filename
-            // OutputDebugString(dirFile) ;
+            // syslog(dirFile) ;
          }
          ofn.lpstrInitialDir = dirFile ;
          ofn.nMaxFile = sizeof(szFile);
@@ -882,7 +810,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          if (strptr != 0) {
             strptr++ ;  //  leave the backslash in place
             *strptr = 0 ;  //  strip off filename
-            // OutputDebugString(dirFile) ;
+            // syslog(dirFile) ;
          }
          ofn.lpstrInitialDir = dirFile ;
          ofn.nMaxFile = sizeof(szFile);
@@ -976,7 +904,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
       case IDC_BUTTON6:   //  launch new command processor
          if (dirty_flag) {
-            // OutputDebugString("writing dirty buffers") ;
+            // syslog("writing dirty buffers\n") ;
             write_all_consoles() ;
             dirty_flag = 0 ;
          }
@@ -1123,24 +1051,16 @@ INT WINAPI WinMain( HINSTANCE  hInstance,
    load_exec_filename() ;     //  get our executable name
 
   if (IsAppRunning()) {
-       MessageBox(NULL, "The program is already running", "Error", MB_OK | MB_ICONERROR);
+       syslog("The program is already running\n");
        return 0;
    }
    find_chm_location() ;
 
    //****************************************************************
-   HWND hWnd = CreateDialog( hInstance,
-                             (LPCTSTR) "DIALOG_NAME",
-                             NULL,
-                             (DLGPROC)InitProc );
+   HWND hWnd = CreateDialog( hInstance, MAKEINTRESOURCE(IDD_DIALOG), nullptr, (DLGPROC)InitProc );
    MSG    Msg;
-   //  remove this line to start out minimized to toolbar
-   // ShowWindow(hWnd, nCmdShow) ;
-
-   while(GetMessage(&Msg, NULL,0,0) == TRUE)
-   {
-       if(!IsDialogMessage(hWnd,&Msg))
-       {
+   while(GetMessage(&Msg, nullptr,0,0) == TRUE) {
+       if(!IsDialogMessage(hWnd,&Msg)) {
            TranslateMessage(&Msg);
            DispatchMessage(&Msg);
        }

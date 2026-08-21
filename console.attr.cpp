@@ -371,7 +371,10 @@ int read_palette_file(char *palette_name, double brighten)
    unsigned utemp ;
    int hdl = open(palette_name, O_BINARY | O_RDONLY) ;
    if (hdl < 0) {
-      syslog( "open (read): %s: %s\n", palette_name, get_system_message()) ;
+      syslog( "Error: open (read): %s: %s\n", palette_name, get_system_message()) ;
+      // Error: open (read): C:\SourceCode\win32\console_attr\palettes\IRELAND.PLT: 
+      // The system cannot find the path specified.
+      
       return errno ;
    }
    int rdbytes = read(hdl, pdata, sizeof(pdata)+1) ;
