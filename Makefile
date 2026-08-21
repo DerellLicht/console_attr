@@ -2,19 +2,17 @@
 # SHELL=cmd.exe
 USE_DEBUG = NO
 USE_64BIT = NO
-USE_UNICODE = YES
-USE_CLANG = NO
-# use -static for clang/llvm and cygwin/mingw
-USE_STATIC = NO
+USE_UNICODE = NO
+USE_CLANG = YES
 
 include der_libs\tool_select.mak 
 
 ifeq ($(USE_DEBUG),YES)
 CFLAGS = -Wall -g -c
-LFLAGS = -g
+LFLAGS = -g -mwindows
 else
 CFLAGS = -Wall -O3 -c
-LFLAGS = -s -O3
+LFLAGS = -s -mwindows
 endif
 CFLAGS += -Weffc++
 CFLAGS += -Wno-write-strings
@@ -47,7 +45,7 @@ LINTFILES=lintdefs.cpp lintdefs.ref.h
 
 OBJS = $(CPPSRC:.cpp=.o)
 
-LIBS=-lcomdlg32
+LIBS=-lcomdlg32 -lgdi32 -lhtmlhelp
 
 BIN = console_attr
 BINS = $(BIN).exe

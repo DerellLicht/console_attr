@@ -1,4 +1,3 @@
-extern char tempstr[1024] ;
 extern unsigned curr_attr[16] ;
    
 void build_console_list(void);

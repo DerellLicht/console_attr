@@ -33,8 +33,6 @@ static char szClassName[] = "Console Palette Changer V1.04" ;
 #include "ezfont.h"
 #include "regif.h"
 
-//lint -e527   code Unreachable
-
 #define BUFFER_SIZE 256
 static unsigned dirty_flag = 0 ;
 
@@ -79,9 +77,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 //*******************************************************************************
 // void debug_dump_rect(char *msg, RECT *drect)
 // {
-//    wsprintf(tempstr, "%s: L%u, T%u, R%u, B%u", msg,
+//    syslog("%s: L%u, T%u, R%u, B%u", msg,
 //       drect->left, drect->top, drect->right, drect->bottom) ;
-//    OutputDebugString(tempstr) ;
 // }
 
 //*****************************************************************
@@ -252,53 +249,6 @@ static void dprints_centered_x(HWND hwnd, LONG y, unsigned attr, char *str)
    ReleaseDC (hwnd, hdc) ;
 }
 
-//**************************************************************************
-BOOL IsAppRunning(void)
-{
-  HANDLE hMutex = CreateMutex(NULL, TRUE, "console_attr");
-  if (GetLastError() == ERROR_ALREADY_EXISTS)
-  {
-      CloseHandle(hMutex);
-      return TRUE;
-  }
- 
-  return FALSE;
-}
-
-//**************************************************************************
-INT WINAPI WinMain( HINSTANCE  hInstance,
-                    HINSTANCE  hPrevInstance,
-                    LPSTR      lpCmdLine,
-                    INT        nCmdShow )
-{
-   hInst = hInstance;
-
-  if (IsAppRunning()) {
-       MessageBox(NULL, "The program is already running", "Error", MB_OK | MB_ICONERROR);
-       return 0;
-   }
-   find_chm_location() ;
-
-   //****************************************************************
-   HWND hWnd = CreateDialog( hInstance,
-                             (LPCTSTR) "DIALOG_NAME",
-                             NULL,
-                             (DLGPROC)InitProc );
-   MSG    Msg;
-   //  remove this line to start out minimized to toolbar
-   // ShowWindow(hWnd, nCmdShow) ;
-
-   while(GetMessage(&Msg, NULL,0,0) == TRUE)
-   {
-       if(!IsDialogMessage(hWnd,&Msg))
-       {
-           TranslateMessage(&Msg);
-           DispatchMessage(&Msg);
-       }
-   }
-   return Msg.wParam;
-}  //lint !e715  func params not used
-
 //*******************************************************************************
 static int get_cmd_proc_name(char *cmdpath)
 {
@@ -378,12 +328,6 @@ nevermind:
    inireg.get_param("startpath", starting_path) ;
    inireg.get_param("brighten", &brighten) ;
 
-   // wsprintf(tempstr, "cmdprog=%s", cmd_proc_filename) ;
-   // OutputDebugString(tempstr) ;
-   // wsprintf(tempstr, "palette=%s", palette_filename) ;
-   // OutputDebugString(tempstr) ;
-   // wsprintf(tempstr, "startpath=%s", starting_path) ;
-   // OutputDebugString(tempstr) ;
 }
 
 //************************************************************************
@@ -425,8 +369,7 @@ static void update_edit5(HWND hDlgWnd, HDC hdc)
    // HWND hEditwnd = GetDlgItem(hDlgWnd, IDC_EDIT5);
    // HDC hdc = GetDC(hDlgWnd) ;
    if (hdc == NULL) {
-      wsprintf(tempstr, "update_edit5: GetDC: %s", get_system_message()) ;
-      OutputDebugString(tempstr) ;
+      syslog("update_edit5: GetDC: %s", get_system_message()) ;
    }
 
    //*********************************
@@ -455,12 +398,8 @@ static void update_edit5(HWND hDlgWnd, HDC hdc)
    // ExtTextOut(hdc, 0, 0, ETO_OPAQUE, &rect, "", 0, 0);
    // SetBkColor(hdc, oldcr);
 
-   // wsprintf(tempstr, "hwnd5 (paint): l%u, t%u, r%u, b%u",
-   //    rect.left,
-   //    rect.top,
-   //    rect.right,
-   //    rect.bottom) ;
-   // OutputDebugString(tempstr) ;   //  this is how to use it
+   // syslog("hwnd5 (paint): l%u, t%u, r%u, b%u",
+   //    rect.left, rect.top, rect.right, rect.bottom) ;
 
    //*************************************************************
    //   draw sample texts in Edit5 area
@@ -495,8 +434,7 @@ static void update_edit5(HWND hDlgWnd, HDC hdc)
    }
    DeleteObject (SelectObject (hdc, GetStockObject (SYSTEM_FONT)));
 
-   // wsprintf(tempstr, "yl=%u", yl) ; //  yl = 485
-   // OutputDebugString(tempstr) ;
+   // syslog("yl=%u", yl) ; //  yl = 485
    // ReleaseDC (hDlgWnd, hdc) ;
 }  //lint !e715  func params not used
 
@@ -594,8 +532,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       int result = read_palette_file(palette_filename, brighten) ;
       if (result != 0) {
          // show_message(NULL, "cannot read palette file") ;
-         wsprintf(tempstr, "read_palette_file: %s: %d\n", palette_filename, result) ;
-         OutputDebugString(tempstr) ;
+         syslog("read_palette_file: %s: %d\n", palette_filename, result) ;
          restore_default_colors();
       }
       build_console_list() ;
@@ -661,13 +598,12 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          unsigned xr = xl + bwidth ;
          DWORD flags = 0 ;
          // show_button_area(hdc, xl, yu, xr, yl, curr_attr[xx-1]) ;
+         char tempstr[20];
          wsprintf(tempstr, "[%02u]", xx) ;
          // PaletteEdithwnd[xx] = CreateButtonEx(tempstr, flags, 
          CreateButtonEx(tempstr, flags, xl, yu, 
-            (xr - xl + 1), (yl - yu + 1),
-            PaletteEditID[xx], hDlgWnd, hInst);
-         // wsprintf(tempstr, "create button %02u, hwnd=%08X", xx, (unsigned) PaletteEdithwnd[xx]) ;
-         // OutputDebugString(tempstr) ;
+            (xr - xl + 1), (yl - yu + 1), PaletteEditID[xx], hDlgWnd, hInst);
+         // syslog("create button %02u, hwnd=%08X", xx, (unsigned) PaletteEdithwnd[xx]) ;
       }
 
       //**********************************************************
@@ -703,8 +639,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
    break;
 
    case WM_SETFOCUS:
-      // wsprintf(tempstr, "%u: WM_SETFOCUS", (unsigned) hDlgWnd) ;
-      // OutputDebugString("WM_SETFOCUS") ;
+      // syslog("%u: WM_SETFOCUS", (unsigned) hDlgWnd) ;
       
       // InvalidateRgn (hDlgWnd, NULL, FALSE);
       InvalidateRect(hDlgWnd, NULL, TRUE);
@@ -713,16 +648,17 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       // return TRUE;
 
    case WM_PAINT:
-      // wsprintf(tempstr, "%u: WM_PAINT", (unsigned) hDlgWnd) ;
-      // OutputDebugString(tempstr) ;
-      // OutputDebugString("WM_PAINT") ;
+      // syslog("%u: WM_PAINT", (unsigned) hDlgWnd) ;
       
       hdc = BeginPaint (hDlgWnd, &ps);
       SetDlgItemText(hDlgWnd, IDC_EDIT2, cmd_proc_filename) ;
       SetDlgItemText(hDlgWnd, IDC_EDIT3, palette_filename) ;
       SetDlgItemText(hDlgWnd, IDC_EDIT4, starting_path) ;
-      sprintf(tempstr, "%.1f", brighten) ;
+      {
+      char tempstr[20];
+      wsprintf(tempstr, "%.1f", brighten) ;
       SetDlgItemText(hDlgWnd, IDC_EDIT1, tempstr) ;
+      }
       update_edit5(hDlgWnd, hdc) ;
       dprints_centered_x(hDlgWnd, Edit5Rect.bottom+20, 0, "Palette Edit Buttons");
       EndPaint (hDlgWnd, &ps);
@@ -759,8 +695,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
    case WM_DRAWITEM:
       {
-      // wsprintf(tempstr, "WM_SETFOCUS: %u", (UINT) wParam) ;
-      // OutputDebugString(tempstr) ;
+      // syslog("WM_DRAWITEM: %u", (UINT) wParam) ;
       UINT hID = (UINT) wParam ;
       if (hID < IDC_PEBTN00  ||  hID > IDC_PEBTN15) 
          return FALSE;
@@ -973,8 +908,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
             int result = read_palette_file(palette_filename, brighten);
             if (result != 0) {
-               wsprintf(tempstr, "%s: %s", palette_filename, strerror(result)) ;
-               OutputDebugString(tempstr) ;
+               syslog("%s: %s", palette_filename, strerror(result)) ;
                strncpy(palette_filename, oldFile, sizeof(palette_filename)) ;
             }
             dirty_flag = 1 ;
@@ -1005,7 +939,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          // if (strptr != 0) {
          //    strptr++ ;  //  leave the backslash in place
          //    *strptr = 0 ;  //  strip off filename
-         //    // OutputDebugString(dirFile) ;
+         //    // syslog("%s\n", dirFile) ;
          // }
          ofn.lpstrInitialDir = dirFile ;
          ofn.nMaxFile = sizeof(szFile);
@@ -1025,7 +959,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
             if (strptr != 0) {
                // strptr++ ;  //  leave the backslash in place
                *strptr = 0 ;  //  strip off filename
-               // OutputDebugString(dirFile) ;
+               // syslog("%s\n", dirFile) ;
             }
             inireg.set_param("startpath", starting_path) ;
             SetFocus(hDlgWnd) ;
@@ -1046,9 +980,12 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
             write_all_consoles() ;
             dirty_flag = 0 ;
          }
+         {
+         char tempstr[1024] ;
          sprintf(tempstr, "start /D\"%s\" %s", starting_path, cmd_proc_filename) ;
-         // OutputDebugString(tempstr) ;
+         // syslog("%s\n", tempstr) ;
          system(tempstr) ;
+         }
          return TRUE;
       break;
 
@@ -1095,8 +1032,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
             int result = write_palette_file(palette_filename, brighten);
             if (result != 0) {
-               wsprintf(tempstr, "%s: %s", palette_filename, strerror(result)) ;
-               OutputDebugString(tempstr) ;
+               syslog("%s: %s", palette_filename, strerror(result)) ;
                strncpy(palette_filename, oldFile, sizeof(palette_filename)) ;
             }
             SetFocus(hDlgWnd) ;
@@ -1133,8 +1069,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       case IDC_PEBTN15:
          {
          unsigned idx = LOWORD(wParam)  % 16 ;
-         // wsprintf(tempstr, "edit palette entry %u", idx) ;
-         // OutputDebugString(tempstr) ;
+         // syslog("edit palette entry %u", idx) ;
          select_color(idx) ;
          dirty_flag = 1 ;
          SetFocus(hDlgWnd) ;
@@ -1165,5 +1100,52 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
    return FALSE;
 }
 
-//lint +e527   code Unreachable
+//**************************************************************************
+BOOL IsAppRunning(void)
+{
+  HANDLE hMutex = CreateMutex(NULL, TRUE, "console_attr");
+  if (GetLastError() == ERROR_ALREADY_EXISTS)
+  {
+      CloseHandle(hMutex);
+      return TRUE;
+  }
+ 
+  return FALSE;
+}
+
+//**************************************************************************
+INT WINAPI WinMain( HINSTANCE  hInstance,
+                    HINSTANCE  hPrevInstance,
+                    LPSTR      lpCmdLine,
+                    INT        nCmdShow )
+{
+   hInst = hInstance;
+   load_exec_filename() ;     //  get our executable name
+
+  if (IsAppRunning()) {
+       MessageBox(NULL, "The program is already running", "Error", MB_OK | MB_ICONERROR);
+       return 0;
+   }
+   find_chm_location() ;
+
+   //****************************************************************
+   HWND hWnd = CreateDialog( hInstance,
+                             (LPCTSTR) "DIALOG_NAME",
+                             NULL,
+                             (DLGPROC)InitProc );
+   MSG    Msg;
+   //  remove this line to start out minimized to toolbar
+   // ShowWindow(hWnd, nCmdShow) ;
+
+   while(GetMessage(&Msg, NULL,0,0) == TRUE)
+   {
+       if(!IsDialogMessage(hWnd,&Msg))
+       {
+           TranslateMessage(&Msg);
+           DispatchMessage(&Msg);
+       }
+   }
+   return Msg.wParam;
+}  //lint !e715  func params not used
+
 

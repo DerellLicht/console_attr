@@ -25,13 +25,6 @@ typedef unsigned char  u8 ;
 
 static HKEY target_key = HKEY_LOCAL_MACHINE ;
 
-//lint -esym(754, ul2uc_u::us)
-typedef union ul2uc_u {
-   unsigned ul ;
-   unsigned short us[2] ;
-   unsigned char uc[4] ;
-} ul2uc_t ;
-
 //**************************************************************
 //  build list of eligible consoles in registry
 //**************************************************************
@@ -306,7 +299,6 @@ int write_all_consoles(void)
    // dump_palette_data() ;
    // puts("") ;
    // syslog( "console list: 0x%08X\n", (unsigned) console_list) ;
-   // OutputDebugString(tempstr) ;
 
    //  now iterate over list
    console_info_p cptr = console_list ;
@@ -359,13 +351,13 @@ int write_palette_file(char *palette_name, double brighten)
 
    int hdl = open(palette_name, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0666) ;
    if (hdl < 0) {
-      wsyslog( "open (write): %s: %s\n", palette_name, get_system_message()) ;
+      syslog( "open (write): %s: %s\n", palette_name, get_system_message()) ;
       return errno ;
    }
    int wrbytes = write(hdl, pdata, sizeof(pdata)) ;
    close(hdl) ;
    if (wrbytes != sizeof(pdata)) {
-      wsyslog( "write returned %d vs %u", wrbytes, sizeof(pdata)) ;
+      syslog( "write returned %d vs %u", wrbytes, sizeof(pdata)) ;
       return EINVAL ;
    }
    return 0;
@@ -379,14 +371,14 @@ int read_palette_file(char *palette_name, double brighten)
    unsigned utemp ;
    int hdl = open(palette_name, O_BINARY | O_RDONLY) ;
    if (hdl < 0) {
-      wsyslog( "open (read): %s: %s\n", palette_name, get_system_message()) ;
+      syslog( "open (read): %s: %s\n", palette_name, get_system_message()) ;
       return errno ;
    }
    int rdbytes = read(hdl, pdata, sizeof(pdata)+1) ;
    close(hdl) ;
    if (rdbytes != 64) {
       // return -1;
-      wsyslog( "read: %s: %d vs %d\n", palette_name, rdbytes, sizeof(pdata)) ;
+      syslog( "read: %s: %d vs %d\n", palette_name, rdbytes, sizeof(pdata)) ;
       return EINVAL ;
    }
 
