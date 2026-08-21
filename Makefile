@@ -23,9 +23,6 @@ all: $(BINS)
 clean:
 	rm -f $(BINS) *.o
 
-install:
-	cp -f $(BINS) *.chm "\Program Files\Misc Binaries"
-
 dist:
 	rm -f *.o *.obj *.zip
 	zip -D console.palette.chgr.src.zip *
