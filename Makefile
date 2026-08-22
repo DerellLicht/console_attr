@@ -37,7 +37,7 @@ ifeq ($(USE_STATIC),YES)
 LFLAGS += -static
 endif
 
-CPPSRC=dialog.cpp console.attr.cpp regif.cpp \
+CPPSRC=dialog.cpp console.attr.cpp config.cpp \
 der_libs/common_funcs.cpp \
 der_libs/common_win.cpp 
 # der_libs/qualify.cpp 
@@ -79,9 +79,8 @@ check:
 lint:
 	cmd /C "c:\lint9\lint-nt +v -width(160,4) $(LiFLAGS) -ic:\lint9 mingw.lnt -os(_lint.tmp) $(LINTFILES) $(CPPSRC)"
 
-# use [make -fwMakefile depend] to reach this
 depend: 
-	makedepend -fwMakefile $(IFLAGS) $(CPPSRC)
+	makedepend $(IFLAGS) $(CPPSRC)
 
 $(BINS): $(OBJS)
 	$(TOOLS)/$(GNAME) $(OBJS) $(LFLAGS) -o $(BINS) $(LIBS) 
