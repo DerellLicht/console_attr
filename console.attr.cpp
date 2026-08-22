@@ -12,6 +12,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>  //  _MAX_PATH
+#include <string.h>  //  memcpy
 #include <errno.h>
 #include <malloc.h>
 #include <fcntl.h>
@@ -60,7 +61,10 @@ static console_info_p add_console_entry(char *path)
 {
    console_info_p cptr = (console_info_p) malloc(sizeof(console_info_t)) ;
    if (cptr != 0) {
-      memset((char *) cptr, 0, sizeof(console_info_t)) ;
+      //  memset() takes void*, and console_info_p converts to void*
+      //  implicitly -- the old (char *) cast was doing nothing useful
+      //  and was what cppcheck was flagging, so it's simply removed.
+      memset(cptr, 0, sizeof(console_info_t)) ;
       if (path == 0)
          wsprintf(cptr->path, "Console") ;
       else
@@ -224,7 +228,16 @@ static void enum_values(char *pszPath, console_info_p cptr)
       unsigned idx = atoi(pszTemp+10) ;
       // printf("[%s], len=%u, 0x%08X\n", pszTemp, (unsigned) DataLen, *((unsigned *) &vData[0])) ;
       // console_attr[idx] = (unsigned) *((unsigned *) &vData[0]);
-      cptr->attr[idx] = (unsigned) *((unsigned *) &vData[0]);
+      //  vData is a BYTE (unsigned char) array; reading it through a
+      //  (unsigned *) is the direction of type-punning that's actually
+      //  undefined behavior (strict-aliasing violation, and vData has
+      //  no guaranteed 4-byte alignment). memcpy() is the well-defined
+      //  way to reinterpret the bytes as an unsigned -- and on any
+      //  target compiler it optimizes down to the same load instruction.
+      //  cptr->attr[idx] = (unsigned) *((unsigned *) &vData[0]);
+      unsigned regvalue ;
+      memcpy(&regvalue, &vData[0], sizeof(regvalue)) ;
+      cptr->attr[idx] = regvalue ;
       cptr->attr_count++ ;
    } 
 
@@ -277,7 +290,14 @@ static int write_new_attr(console_info_p cptr)
       // wsprintf(pszPath, "Console\\ColorTable%02u", j) ;
       wsprintf(pszPath, "ColorTable%02u", j) ;
 
-      LONG wresult = RegSetValueEx(hKey, pszPath, 0, REG_DWORD, (BYTE *) &curr_attr[j], sizeof(unsigned)) ;
+      //  Unlike the vData read above, this direction is well-defined:
+      //  the standard explicitly permits examining any object's bytes
+      //  through an unsigned char* (BYTE is unsigned char). We're not
+      //  reinterpreting a byte buffer AS an unsigned -- we're viewing
+      //  an actual unsigned's bytes as bytes, which is legal. It's
+      //  still a pointer-type reinterpretation though, which is exactly
+      //  what reinterpret_cast exists to make explicit.
+      LONG wresult = RegSetValueEx(hKey, pszPath, 0, REG_DWORD, reinterpret_cast<BYTE *>(&curr_attr[j]), sizeof(unsigned)) ;
       if (wresult != ERROR_SUCCESS) {
          syslog("SetValue: %s: %s\n", pszPath, get_system_message()) ;
       } else {

@@ -1,7 +1,5 @@
 # makefile for console_attr.exe
-# 
-# NOTE: keep this file sync'd with Makefile, which is used by "make clint" 
-#       to validate compile_commands.json
+# SHELL=cmd.exe
 USE_DEBUG = NO
 USE_64BIT = NO
 USE_UNICODE = NO

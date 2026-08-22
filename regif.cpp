@@ -41,13 +41,12 @@
 
 int registry_iface::find_exe_location(void)
 {
-   char *strptr ;
    struct stat st ;
 
    //  see if we can find and show parent filename
    // if (GetModuleFileName(g_hInst, filename, sizeof(filename)) == 0) {
    if (GetModuleFileName(NULL, ininame, sizeof(ininame)) != 0) {
-      strptr = strrchr(ininame, '.') ;
+      char *strptr = strrchr(ininame, '.') ;
       //  if no extention on existing path, just concat the name
       if (strptr == 0) {
          strcat(ininame, ".ini") ;
@@ -70,7 +69,16 @@ int registry_iface::find_exe_location(void)
 //************************************************************
 //  class constructor
 //************************************************************
-registry_iface::registry_iface(char *group_name)
+registry_iface::registry_iface(char *group_name) :
+   ininame {},
+   grp_name {},
+   ini_read_bfr {},
+   rbfr_count  {},
+   read_bfr_valid  {},
+   status {},
+   ini_exists {},
+   rtempstr {}
+
 {
    // hwndStatus = 0 ;
 
@@ -194,16 +202,17 @@ int registry_iface::WriteRegifProfileString(char *field, char *value)
    //  When done, write the updated ini file.
    //  see what we read.
    idx = rbfr_count ;
-   char *eqptr ;
+   // char *eqptr ;
    int found = 0 ;
    int flen = strlen(field) ;
    for (j=0; j<idx; j++) {
       if (strncmp(field, ini_read_bfr[j], flen) == 0) {
          //  if I found the target string, return what we found
-         eqptr = strchr(ini_read_bfr[j], '=') ;
-         if (eqptr == 0) 
+         char *eqptr = strchr(ini_read_bfr[j], '=') ;
+         if (eqptr == 0) {
             continue;
-         eqptr++ ;
+         }
+         eqptr++ ;   // point past the equal sign
          wsprintf(rtempstr, "%s=%s", field, value) ;
          strncpy(ini_read_bfr[j], rtempstr, sizeof(ini_read_bfr[j])) ;
          found = 1 ;
@@ -217,8 +226,9 @@ int registry_iface::WriteRegifProfileString(char *field, char *value)
    }
    //  write the output file
    FILE *fd = fopen(ininame, "wt") ;
-   if (fd == 0) 
+   if (fd == 0) {
       return -errno ;
+   }
    for (j=0; j<idx; j++) {
       fprintf(fd, "%s\n", ini_read_bfr[j]);
    }

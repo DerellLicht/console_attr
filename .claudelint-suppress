@@ -4,4 +4,4 @@
 #
 # Example (uncomment and edit to suppress a real finding):
 # der_libs/common.h:101  # SomeStruct::some_field
-
+D:\SourceCode\Git\console_attr\dialog.cpp:55  # unused local 'dbg_flags'

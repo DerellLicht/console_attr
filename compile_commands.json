@@ -61,11 +61,11 @@
    "-Wno-write-strings",
    "-DUSING_CLANG",
    "-Ider_libs",
-   "ezfont.cpp",
+   "der_libs/common_funcs.cpp",
    "-o",
-   "ezfont.o"
+   "der_libs/common_funcs.o"
   ],
-  "file": "ezfont.cpp"
+  "file": "der_libs/common_funcs.cpp"
  },
  {
   "directory": "D:\\SourceCode\\Git\\console_attr",
@@ -78,10 +78,10 @@
    "-Wno-write-strings",
    "-DUSING_CLANG",
    "-Ider_libs",
-   "der_libs/common_funcs.cpp",
+   "der_libs/common_win.cpp",
    "-o",
-   "der_libs/common_funcs.o"
+   "der_libs/common_win.o"
   ],
-  "file": "der_libs/common_funcs.cpp"
+  "file": "der_libs/common_win.cpp"
  }
 ]
