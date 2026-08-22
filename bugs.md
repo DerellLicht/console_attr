@@ -1,3 +1,5 @@
+- update comments about this project, on web site
+
 - this bug was found by cppcheck ... it is likely a valid bug.
 regif.cpp:215:15: style: Variable 'eqptr' is assigned a value that is never used. [unreadVariable]
          eqptr++ ;
