@@ -3,18 +3,18 @@
 //  config.cpp - manage configuration data file
 //****************************************************************************
 
-// must be defined by top-level code
-// *or* top-level code could assign client_width/client_height 
-// whenever cxClient/cyClient change
-extern uint cxClient ;
-extern uint cyClient ;
+// [dialog]
+// cmdprog=C:\WINDOWS\system32\cmd.exe
+// palette=D:\SourceCode\Git\console_attr\palettes\DOS.PLT
+// startpath=C:\download
+// brighten=3.000000
+// window_top=370
+// window_left=977
 
 //  config.cpp
 extern uint dbg_flags ;
 extern uint window_top ;
 extern uint window_left ;
-extern uint client_height ;
-extern uint client_width ;
 
 LRESULT save_cfg_file(void);
 LRESULT init_config(void);

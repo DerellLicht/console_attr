@@ -44,23 +44,6 @@
    "-Wno-write-strings",
    "-DUSING_CLANG",
    "-Ider_libs",
-   "regif.cpp",
-   "-o",
-   "regif.o"
-  ],
-  "file": "regif.cpp"
- },
- {
-  "directory": "D:\\SourceCode\\Git\\console_attr",
-  "arguments": [
-   "d:/llvm/bin/i686-w64-mingw32-clang++",
-   "-Wall",
-   "-O3",
-   "-c",
-   "-Weffc++",
-   "-Wno-write-strings",
-   "-DUSING_CLANG",
-   "-Ider_libs",
    "der_libs/common_funcs.cpp",
    "-o",
    "der_libs/common_funcs.o"
@@ -83,5 +66,22 @@
    "der_libs/common_win.o"
   ],
   "file": "der_libs/common_win.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "config.cpp",
+   "-o",
+   "config.o"
+  ],
+  "file": "config.cpp"
  }
 ]

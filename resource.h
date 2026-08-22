@@ -1,10 +1,9 @@
-#define IDC_STATIC 103
-#define IDI_ICON 100
-#define IDD_DIALOG 101
-#define IDC_DLG_TEXT 102
+#define IDC_STATIC                    16383
+#define IDI_ICON                        100
+#define IDD_DIALOG                      101
+#define IDC_DLG_TEXT                    102
+#define IDAPPLICON                      103
 
-#define IDD_CONSOLEPALETTE_DIALOG      104
-#define IDR_MAINFRAME                  128
 #define IDC_EDIT1                      1000
 #define IDC_BUTTON1                    1001
 #define IDC_BUTTON2                    1002
@@ -19,6 +18,7 @@
 #define IDC_BUTTON7                    1011
 #define IDC_HEADER                     1012
 #define IDC_BUTTON8                    1013
+#define IDB_CLOSE                      1014
 
 #define IDC_PEBTN00                    2000
 #define IDC_PEBTN01                    2001
@@ -36,10 +36,3 @@
 #define IDC_PEBTN13                    2013
 #define IDC_PEBTN14                    2014
 #define IDC_PEBTN15                    2015
-
-// #define IDD_MAINDIALOG  100
-#define IDAPPLICON      710
-#define ID_TRAYMENU    3000
-#define ID_TRAYOPEN    3010
-#define ID_TRAYEXIT    3020
-

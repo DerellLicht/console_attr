@@ -24,20 +24,9 @@ BEGIN
     PUSHBUTTON      "select palette file",IDC_BUTTON3,13,78,72,13,BS_MULTILINE
     EDITTEXT        IDC_EDIT3,97,80,210,10,ES_READONLY
 
-    CTEXT           "Console Palette Loader",IDC_HEADER,68,7,186,16,SS_CENTERIMAGE | WS_BORDER
+    CTEXT           "Console Palette Loader",IDC_HEADER, 68,7,186,16,SS_CENTERIMAGE | WS_BORDER
+    PUSHBUTTON      "Close",                 IDB_CLOSE, 270,7, 30,16
 
     PUSHBUTTON      "starting directory",IDC_BUTTON4,13,98,72,13,BS_MULTILINE
     EDITTEXT        IDC_EDIT4,97,100,210,10,ES_READONLY
 END
-
-
-ID_TRAYMENU MENU
-BEGIN
-    POPUP "&TrayMenu"
-        BEGIN
-        MENUITEM "&Open main window", ID_TRAYOPEN
-        MENUITEM SEPARATOR
-        MENUITEM "&Exit from ConAttr", ID_TRAYEXIT
-        END
-END
-

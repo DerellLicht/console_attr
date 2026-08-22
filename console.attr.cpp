@@ -333,23 +333,23 @@ int write_all_consoles(void)
 }
 
 //**************************************************************
-static unsigned make_brighter(unsigned utemp, double brighten)
+static unsigned make_brighter(unsigned utemp, double dbrighten)
 {
-   unsigned uvalue = (unsigned) ((double) utemp * brighten) ;
+   unsigned uvalue = (unsigned) ((double) utemp * dbrighten) ;
    if (uvalue > 255)
        uvalue = 255 ;
    return uvalue ;
 }
 
 //**************************************************************
-static unsigned make_dimmer(unsigned utemp, double brighten)
+static unsigned make_dimmer(unsigned utemp, double dbrighten)
 {
-   unsigned uvalue = (unsigned) ((double) utemp / brighten) ;
+   unsigned uvalue = (unsigned) ((double) utemp / dbrighten) ;
    return uvalue ;
 }
 
 //**************************************************************
-int write_palette_file(char *palette_name, double brighten)
+int write_palette_file(char *palette_name, double dbrighten)
 {
    // u8 pdata[51] ; //  old style
    u8 pdata[64] ;
@@ -365,11 +365,11 @@ int write_palette_file(char *palette_name, double brighten)
       // uconv.ul = curr_attr[pidx] ;
       uconv.ul = curr_attr_element ;
       utemp = uconv.uc[0] ;
-      pdata[idx++] = (u8) make_dimmer(utemp, brighten) ;
+      pdata[idx++] = (u8) make_dimmer(utemp, dbrighten) ;
       utemp = uconv.uc[1] ;
-      pdata[idx++] = (u8) make_dimmer(utemp, brighten) ;
+      pdata[idx++] = (u8) make_dimmer(utemp, dbrighten) ;
       utemp = uconv.uc[2] ;
-      pdata[idx++] = (u8) make_dimmer(utemp, brighten) ;
+      pdata[idx++] = (u8) make_dimmer(utemp, dbrighten) ;
       pdata[idx++] = 0 ;
    }
 
@@ -388,7 +388,7 @@ int write_palette_file(char *palette_name, double brighten)
 }
 
 //**************************************************************
-int read_palette_file(char *palette_name, double brighten)
+int read_palette_file(char *palette_name, double dbrighten)
 {
    // u8 pdata[52] ;
    u8 pdata[65] ;
@@ -417,16 +417,16 @@ int read_palette_file(char *palette_name, double brighten)
       //  bytes are reached in r,g,b sequence in binary file.
       //  Also, don't brighten index 0 (background color)
       utemp = (unsigned) *uptr++ ;
-      if (brighten)
-         utemp = make_brighter(utemp, brighten) ;
+      if (dbrighten)
+         utemp = make_brighter(utemp, dbrighten) ;
       uconv.uc[0] = (u8) utemp ;
       utemp = (unsigned) *uptr++ ;
-      if (brighten)
-         utemp = make_brighter(utemp, brighten) ;
+      if (dbrighten)
+         utemp = make_brighter(utemp, dbrighten) ;
       uconv.uc[1] = (u8) utemp ;
       utemp = (unsigned) *uptr++ ;
-      if (brighten)
-         utemp = make_brighter(utemp, brighten) ;
+      if (dbrighten)
+         utemp = make_brighter(utemp, dbrighten) ;
       uconv.uc[2] = (u8) utemp ;
       uconv.uc[3] = 0 ;
       uptr++ ; //  skip fourth byte

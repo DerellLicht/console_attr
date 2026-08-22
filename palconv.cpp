@@ -45,7 +45,7 @@ char *get_system_message(void)
 int main(void)
 {
    WIN32_FIND_DATA fdata ;
-   char outfile[MAX_PATH] ;
+   char outfile[MAX_PATH_LEN] ;
    u8 inbfr[51] ;
    u8 outbfr[48] ;
 

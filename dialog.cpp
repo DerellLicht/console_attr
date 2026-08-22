@@ -30,12 +30,7 @@ static char szClassName[] = "Console Palette Changer V1.05" ;
 #include "common.h"
 #include "commonw.h"
 #include "console.attr.h"
-// #include "ezfont.h"
-#include "regif.h"
-
-// 08/22/26 I don't know why I would want this?
-#define  SKIP_NOTIFY_TRAY
-// #undef  SKIP_NOTIFY_TRAY
+#include "config.h"
 
 #define BUFFER_SIZE 256
 static unsigned dirty_flag = 0 ;
@@ -43,22 +38,10 @@ static unsigned dirty_flag = 0 ;
 static char szText[BUFFER_SIZE];
 static HBRUSH g_hbrBackground = (HBRUSH) (COLOR_WINDOW + 1) ;
 static HINSTANCE hInst;
-static NOTIFYICONDATA NotifyIconData;
+// static NOTIFYICONDATA NotifyIconData;
 
 static RECT DialogRect;
 static RECT Edit5Rect;
-
-uint window_top = 0;
-uint window_left = 0;
-//****************************************************************************
-//  debug: message-reporting data
-//  NOTE: setting constants here, won't work!!
-//        This value is over-written by INI file!!
-//****************************************************************************
-//    if (dbg_flags & DBG_WINMSGS) {
-uint dbg_flags =
-               // DBG_WINMSGS |
-               0 ;
 
 // static HWND PaletteEdithwnd[16] = {
 //    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } ;
@@ -75,20 +58,30 @@ static TCHAR szExecFilter[] = TEXT ("Executable Files (*.EXE)\0*.exe\0")  \
                               TEXT ("All Files (*.*)\0*.*\0\0") ;
 static TCHAR szDirFilter[]  = TEXT ("All Files (*.*)\0*.*\0\0") ;
 
-static registry_iface inireg("dialog") ;
+// static registry_iface inireg("dialog") ;
 //********************************************************
 //  ini variables
 //********************************************************
-static char palette_filename[MAX_PATH] = "dos.plt" ;
-static char cmd_proc_filename[MAX_PATH] = "C:\\WINDOWS\\SYSTEM32\\cmd.exe" ;  // NOLINT(modernize-raw-string-literal)
-static char starting_path[MAX_PATH] = "C:\\download" ;
-static double brighten = 3.0 ;
+char palette_filename[MAX_PATH_LEN+1] = "" ;
+char cmd_proc_filename[MAX_PATH_LEN+1] = "C:\\WINDOWS\\SYSTEM32\\cmd.exe" ;  // NOLINT(modernize-raw-string-literal)
+char starting_path[MAX_PATH_LEN+1] = "C:\\download" ;
+double brighten = 3.0 ;
 
 static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM lParam ) ;
 
 #define CrSampleFont EzCreateFont (hdc, "Courier New", 150, 0, EZ_ATTR_BOLD, 0, TRUE)
 #define CrDataFont EzCreateFont (hdc, "Bodacious-Normal", 150, 0, 0, 0, TRUE)
 // #define CrLabelFont EzCreateFont (hdc, "Times New Roman", 150, 0, 0, 0, TRUE)
+
+//*******************************************************************************
+int setup_palette_filename()
+{
+   if (palette_filename[0] == 0) {
+      get_base_filename(&palette_filename[0]);
+      strcat(palette_filename, "\\palettes\\DOS.PLT");
+   }
+   return 0 ;
+}
 
 //*******************************************************************************
 // void debug_dump_rect(char *msg, RECT *drect)
@@ -104,8 +97,6 @@ static char chmname[1024] ;
 
 static int find_chm_location(void)
 {
-   // struct stat st ;
-
    int result = derive_filename_from_exec(chmname, ".chm") ;
    if (result != 0) {
       syslog("could not resolve .chm name\n");
@@ -115,6 +106,7 @@ static int find_chm_location(void)
    // chm name: D:\SourceCode\Git\console_attr\console_attr.chm
 
    //  lastly, see if file already exists
+   // struct stat st ;
    // int result = stat(chmname, &st) ;
    // chm_exists = (result == 0) ? 1 : 0 ;
    return 0;
@@ -151,92 +143,6 @@ static void dprints_centered_x(HWND hwnd, LONG y, unsigned attr, char *str)
    ReleaseDC (hwnd, hdc) ;
 }
 
-//*******************************************************************************
-static int get_cmd_proc_name(char *cmdpath)
-{
-   int result ;
-   struct stat st {};
-   GetSystemDirectory(cmdpath, _MAX_PATH) ;
-   int slen = strlen(cmdpath) ;
-   strcat(cmdpath, "\\cmd.exe") ;
-   result = stat(cmdpath, &st) ;
-   if (result == 0) 
-      return 1;
-
-   *(cmdpath+slen) = 0 ;
-   strcat(cmdpath, "\\command.com") ;
-   result = stat(cmdpath, &st) ;
-   if (result == 0) 
-      return 1;
-   return 0;
-}
-
-//*******************************************************************************
-//  well, for some reason, INI files don't work at all in this situation.
-//  GetPrivateProfileString() doesn't return the strings in the file
-//  at all, even though the file is there and corrent.
-//  Okay, I see what the issue is.  
-//  First, the section (AppName) entry has to exist in the file.  
-//  Second, the file is *not* created if it does not already exist!!
-//  I thought it was... 
-//*******************************************************************************
-static void read_config_data(void)
-{
-
-   //  first, see if ini file exists...
-   //  Note: GetSystemDirectory()
-   if (!inireg.ini_file_exists()) {
-syslog("read_config_data: ini file not found\n");
-      //  find default command processor
-      char *strptr ;
-      char rcdtemp[_MAX_PATH] ;
-      int found = get_cmd_proc_name(rcdtemp) ;
-      if (found) {
-          strncpy(cmd_proc_filename, rcdtemp, sizeof(cmd_proc_filename)) ;
-      }
-
-      // OutputDebugString((result) ? rcdtemp : "no cmd proc found") ;
-      //  find default palettes directory.
-      //  If anything fails at any point, 
-      //  just leave the default name in place
-      if (GetModuleFileName(NULL, rcdtemp, sizeof(rcdtemp)) == 0) 
-      {
-         syslog("fault A\n") ;
-         goto nevermind;
-      }
-      struct stat st {};
-      //  strip off exe name and leave the path
-      strptr = strrchr(rcdtemp, '\\') ;
-      if (strptr == 0) 
-      {
-         syslog("fault B\n") ;
-         goto nevermind;
-      }
-      // strcpy(strptr, ".ini") ;
-      strptr++ ;
-      strcpy(strptr, "palettes") ;
-      if (stat(rcdtemp, &st) != 0)
-      {
-         syslog("fault C\n") ;
-         goto nevermind;
-      }
-      //  okay, the path exists... append the default DOS.PAL 
-      //  and proceed with generating data.
-      strcat(rcdtemp, "\\DOS.PLT") ;
-      strncpy(palette_filename, rcdtemp, sizeof(palette_filename)) ;
-   } 
-nevermind:
-   inireg.get_param("cmdprog", cmd_proc_filename) ;
-   inireg.get_param("palette", palette_filename) ;
-   inireg.get_param("startpath", starting_path) ;
-   inireg.get_param("brighten", &brighten) ;
-   inireg.get_param("window_top",  &window_top) ;
-   inireg.get_param("window_left", &window_left) ;
-   
-   // syslog("inireg: window left: %u, top: %u\n", window_left, window_top);
-
-}
-
 //************************************************************************
 // static void show_button_area(HDC hdc, int xl, int yu, int xr, int yl, COLORREF Color)
 // {
@@ -259,7 +165,7 @@ static void Box(HDC hdc, int x0, int y0, int x1, int y1, COLORREF Color)
    hPen = CreatePen(PS_SOLID, 1, Color) ;
    SelectObject(hdc, hPen) ;
 
-   MoveToEx(hdc, x0, y0, NULL) ;
+   MoveToEx(hdc, x0, y0, nullptr) ;
    LineTo  (hdc, x1, y0) ;
    LineTo  (hdc, x1, y1) ;
    LineTo  (hdc, x0, y1) ;
@@ -275,7 +181,7 @@ static void update_edit5(HWND hDlgWnd, HDC hdc)
 {
    // HWND hEditwnd = GetDlgItem(hDlgWnd, IDC_EDIT5);
    // HDC hdc = GetDC(hDlgWnd) ;
-   if (hdc == NULL) {
+   if (hdc == nullptr) {
       syslog("update_edit5: GetDC: %s", get_system_message()) ;
    }
 
@@ -399,8 +305,8 @@ static void Solid_Rect(HDC hdc, int xl, int yu, int xr, int yl, COLORREF Color)
 //**************************************************************************
 static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM lParam )
 {
-   static HMENU hMenu;
-   POINT MouseCoordinates;
+   // static HMENU hMenu;
+   // POINT MouseCoordinates;
    HDC hdc ;
    PAINTSTRUCT ps;
 
@@ -423,7 +329,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       //  real system path, to properly set up cmd_proc_filename
 
       //  read configuration *before* creating edit fields
-      read_config_data() ;
+      init_config() ;
+      // read_config_data() ;
 
       SetWindowText(hDlgWnd, szClassName) ;
       SetDlgItemText(hDlgWnd, IDC_HEADER, szClassName) ;
@@ -461,8 +368,9 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          window_left = (DesktopRect.right - DialogRect.right) / 2 ;
          window_top  = (DesktopRect.bottom - DialogRect.bottom) / 2 ;
          // SetWindowPos( hDlgWnd, HWND_TOP, window_left, window_top, 0,0, SWP_NOSIZE );
-         inireg.set_param("window_top",  window_top) ;
-         inireg.set_param("window_left", window_left) ;
+         // inireg.set_param("window_top",  window_top) ;
+         // inireg.set_param("window_left", window_left) ;
+         save_cfg_file() ;
       }
       // else {
          //  restore previously-saved window size/position from the .ini file. 
@@ -516,26 +424,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       //  do other config tasks *after* creating fields,
       //  so we can display status messages.
       //**********************************************************
-#ifndef  SKIP_NOTIFY_TRAY
-      // Create status bar (source resides in statbar.cpp).
-      // hwndStatusBar = InitStatusBar (hDlgWnd, NO_RESIZE) ;
-      // Statusbar_ShowMessage (msgtext) ;   //  this is how to use it
-
-      // create tray menu
-      hMenu = LoadMenu (hInst, MAKEINTRESOURCE (ID_TRAYMENU));
-
-      // put the icon into a system tray
-      NotifyIconData.cbSize = sizeof (NOTIFYICONDATA);
-      NotifyIconData.hWnd = hDlgWnd;
-      NotifyIconData.uID = 0;
-      NotifyIconData.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
-      NotifyIconData.uCallbackMessage = WM_USER; // tray events will generate WM_USER event
-      // NotifyIconData.hIcon = (HICON) LoadImage (hInstance, MAKEINTRESOURCE (IDAPPLICON), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR); // load 16 x 16 pixels icon
-      NotifyIconData.hIcon = (HICON) LoadIcon (hInst, MAKEINTRESOURCE (IDI_ICON));
-      lstrcpy (NotifyIconData.szTip, szClassName); // max 64 characters
-
-      Shell_NotifyIcon (NIM_ADD, &NotifyIconData);
-#endif      
 
       SetFocus(hDlgWnd) ;
       // InvalidateRect(hDlgWnd, NULL, TRUE);
@@ -563,8 +451,9 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       GetWindowRect(hDlgWnd, &rect);
       window_top = rect.top ;
       window_left = rect.left ;
-      inireg.set_param("window_top",  window_top) ;
-      inireg.set_param("window_left", window_left) ;
+      // inireg.set_param("window_top",  window_top) ;
+      // inireg.set_param("window_left", window_left) ;
+      save_cfg_file() ;
       }
       break ;
    
@@ -676,24 +565,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       }         
    break;
 
-   case WM_USER:
-      // event generated by a system tray - the type of tray event that
-      // generated the message can be found in lParam
-      switch (lParam)   {
-      case WM_RBUTTONUP:
-         // display a tray menu
-         GetCursorPos (&MouseCoordinates);
-         TrackPopupMenu (GetSubMenu (hMenu, 0), TPM_RIGHTALIGN | TPM_LEFTBUTTON, MouseCoordinates.x, MouseCoordinates.y, 0, hDlgWnd, NULL);
-         return TRUE;
-
-      case WM_LBUTTONUP:
-         // show window as response to right-clicking the tray icon
-         ShowWindow (hDlgWnd, SW_SHOWNORMAL);
-         SetForegroundWindow (hDlgWnd);
-         return TRUE;
-      }  //lint !e744  switch lParam
-   break;
-
    case WM_SYSCOMMAND:
       switch (LOWORD(wParam)) {
       case SC_MINIMIZE:
@@ -738,7 +609,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          sprintf(szText, "%.1f", brighten) ;
          // IDC_EDIT3
          SetDlgItemText(hDlgWnd, IDC_EDIT1, szText) ;
-         inireg.set_param("brighten", brighten) ;
+         // inireg.set_param("brighten", brighten) ;
+         save_cfg_file() ;
          return TRUE;
       break;   //  end IDC_BUTTON1
 
@@ -782,7 +654,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          // Display the Open dialog box. 
          if (GetOpenFileName(&ofn) == TRUE) {
             strncpy(cmd_proc_filename, ofn.lpstrFile, sizeof(cmd_proc_filename)) ;
-            inireg.set_param("cmdprog", cmd_proc_filename) ;
+            // inireg.set_param("cmdprog", cmd_proc_filename) ;
+            save_cfg_file() ;
             return TRUE;
          }
          }
@@ -834,7 +707,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
             strncpy(oldFile, palette_filename, sizeof(oldFile)) ;
             strncpy(palette_filename, ofn.lpstrFile, sizeof(palette_filename)) ;
             // SetDlgItemText(hDlgWnd, IDC_EDIT3, palette_filename) ;
-            inireg.set_param("palette", palette_filename) ;
+            // inireg.set_param("palette", palette_filename) ;
+            save_cfg_file() ;
 
             int result = read_palette_file(palette_filename, brighten);
             if (result != 0) {
@@ -891,7 +765,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
                *strptr = 0 ;  //  strip off filename
                // syslog("%s\n", dirFile) ;
             }
-            inireg.set_param("startpath", starting_path) ;
+            // inireg.set_param("startpath", starting_path) ;
+            save_cfg_file() ;
             SetFocus(hDlgWnd) ;
             return TRUE;
          }
@@ -958,7 +833,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
             strncpy(palette_filename, ofn.lpstrFile, sizeof(palette_filename)) ;
             // IDC_EDIT3
             SetDlgItemText(hDlgWnd, IDC_EDIT3, palette_filename) ;
-            inireg.set_param("palette", palette_filename) ;
+            // inireg.set_param("palette", palette_filename) ;
+            save_cfg_file() ;
 
             int result = write_palette_file(palette_filename, brighten);
             if (result != 0) {
@@ -1007,22 +883,21 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          }         
          break;
 
-      case ID_TRAYOPEN: // menu option
-         // open dialog
-         ShowWindow (hDlgWnd, SW_SHOW);
-         return TRUE;
+      case IDB_CLOSE:   
+         PostMessageA(hDlgWnd, WM_CLOSE, 0, 0);
          break;
-
-      case ID_TRAYEXIT:    // menu option - exit from program
-         DestroyWindow (hDlgWnd);
-         return 1;
+         
       }  //lint !e744 switch(LOWORD(wParam)) (WM_COMMAND)
    break;   //  case WM_COMMAND
 
-   case WM_DESTROY:
-      // remove the icon from a system tray and free .dll handle
-      Shell_NotifyIcon (NIM_DELETE, &NotifyIconData);
+   //********************************************************************
+   //  application shutdown handlers
+   //********************************************************************
+   case WM_CLOSE:
+      DestroyWindow(hDlgWnd);
+      break;
 
+   case WM_DESTROY:
       PostQuitMessage (0);
    break;
 
