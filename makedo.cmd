@@ -22,6 +22,6 @@ make -f cMakefile %ARG2%
    @goto :eof
 
 :windows
-make -f wMakefile %ARG2%
+make -f Makefile %ARG2%
    @goto :eof
 

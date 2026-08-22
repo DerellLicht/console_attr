@@ -59,24 +59,24 @@ static unsigned default_attr[16] = {
 //**************************************************************
 static console_info_p add_console_entry(char *path)
 {
-   console_info_p cptr = (console_info_p) malloc(sizeof(console_info_t)) ;
-   if (cptr != 0) {
-      //  memset() takes void*, and console_info_p converts to void*
-      //  implicitly -- the old (char *) cast was doing nothing useful
-      //  and was what cppcheck was flagging, so it's simply removed.
-      memset(cptr, 0, sizeof(console_info_t)) ;
-      if (path == 0)
-         wsprintf(cptr->path, "Console") ;
-      else
-         wsprintf(cptr->path, "Console\\%s", path) ;
+   // console_info_p cptr = (console_info_p) malloc(sizeof(console_info_t)) ;
+   console_info_p cptr = new console_info_t ;
+   //  memset() takes void*, and console_info_p converts to void*
+   //  implicitly -- the old (char *) cast was doing nothing useful
+   //  and was what cppcheck was flagging, so it's simply removed.
+   // memset(cptr, 0, sizeof(console_info_t)) ;
+   ZeroMemory(cptr, sizeof(console_info_t));
+   if (path == 0)
+      wsprintf(cptr->path, "Console") ;
+   else
+      wsprintf(cptr->path, "Console\\%s", path) ;
 
-      //  add new entry to list
-      if (console_list == 0)
-          console_list = cptr ;
-      else
-          console_tail->next = cptr ;
-      console_tail = cptr ;
-   }
+   //  add new entry to list
+   if (console_list == 0)
+       console_list = cptr ;
+   else
+       console_tail->next = cptr ;
+   console_tail = cptr ;
    return cptr;
 }
 
@@ -354,12 +354,16 @@ int write_palette_file(char *palette_name, double brighten)
    // u8 pdata[51] ; //  old style
    u8 pdata[64] ;
    unsigned utemp ;
-   ul2uc_t uconv ;
+   ul2uc_t uconv {};
 
    //  build temp buffer
    unsigned idx = 0 ;
-   for (unsigned pidx=0; pidx<16; pidx++) {
-      uconv.ul = curr_attr[pidx] ;
+   // for (unsigned pidx=0; pidx<16; pidx++) {
+   //  reference *not* required here, 
+   //  because curr_attr_element will be read from.
+   for (unsigned curr_attr_element : curr_attr) {
+      // uconv.ul = curr_attr[pidx] ;
+      uconv.ul = curr_attr_element ;
       utemp = uconv.uc[0] ;
       pdata[idx++] = (u8) make_dimmer(utemp, brighten) ;
       utemp = uconv.uc[1] ;
@@ -405,9 +409,11 @@ int read_palette_file(char *palette_name, double brighten)
       return EINVAL ;
    }
 
-   ul2uc_t uconv ;
+   ul2uc_t uconv {};
    u8 *uptr = &pdata[0] ;
-   for (unsigned j=0; j<16; j++) {
+   // for (unsigned j=0; j<16; j++) {
+   //  reference required here, because curr_attr_element will be written to
+   for (unsigned int & curr_attr_element : curr_attr) {
       //  bytes are reached in r,g,b sequence in binary file.
       //  Also, don't brighten index 0 (background color)
       utemp = (unsigned) *uptr++ ;
@@ -424,7 +430,8 @@ int read_palette_file(char *palette_name, double brighten)
       uconv.uc[2] = (u8) utemp ;
       uconv.uc[3] = 0 ;
       uptr++ ; //  skip fourth byte
-      curr_attr[j] = uconv.ul ;
+      // curr_attr[j] = uconv.ul ;
+      curr_attr_element = uconv.ul ;
    }
    return 0;
 }

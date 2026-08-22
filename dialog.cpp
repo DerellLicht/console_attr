@@ -76,7 +76,7 @@ static registry_iface inireg("dialog") ;
 //  ini variables
 //********************************************************
 static char palette_filename[MAX_PATH] = "dos.plt" ;
-static char cmd_proc_filename[MAX_PATH] = "C:\\WINDOWS\\SYSTEM32\\cmd.exe" ;  //  read this from system
+static char cmd_proc_filename[MAX_PATH] = "C:\\WINDOWS\\SYSTEM32\\cmd.exe" ;  // NOLINT(modernize-raw-string-literal)
 static char starting_path[MAX_PATH] = "C:\\download" ;
 static double brighten = 3.0 ;
 
@@ -151,7 +151,7 @@ static void dprints_centered_x(HWND hwnd, LONG y, unsigned attr, char *str)
 static int get_cmd_proc_name(char *cmdpath)
 {
    int result ;
-   struct stat st ;
+   struct stat st {};
    GetSystemDirectory(cmdpath, _MAX_PATH) ;
    int slen = strlen(cmdpath) ;
    strcat(cmdpath, "\\cmd.exe") ;
@@ -199,7 +199,7 @@ static void read_config_data(void)
          syslog("fault A\n") ;
          goto nevermind;
       }
-      struct stat st ;
+      struct stat st {};
       //  strip off exe name and leave the path
       strptr = strrchr(rcdtemp, '\\') ;
       if (strptr == 0) 
@@ -580,7 +580,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       SetDlgItemText(hDlgWnd, IDC_EDIT4, starting_path) ;
       {
       char tempstr[20];
-      wsprintf(tempstr, "%.1f", brighten) ;
+      sprintf(tempstr, "%.1f", brighten) ;
       SetDlgItemText(hDlgWnd, IDC_EDIT1, tempstr) ;
       }
       update_edit5(hDlgWnd, hdc) ;

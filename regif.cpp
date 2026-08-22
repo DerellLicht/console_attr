@@ -41,7 +41,7 @@
 
 int registry_iface::find_exe_location(void)
 {
-   struct stat st ;
+   struct stat st {};
 
    //  see if we can find and show parent filename
    // if (GetModuleFileName(g_hInst, filename, sizeof(filename)) == 0) {
@@ -75,7 +75,7 @@ registry_iface::registry_iface(char *group_name) :
    ini_read_bfr {},
    rbfr_count  {},
    read_bfr_valid  {},
-   status {},
+   status {find_exe_location()},
    ini_exists {},
    rtempstr {}
 
@@ -83,7 +83,7 @@ registry_iface::registry_iface(char *group_name) :
    // hwndStatus = 0 ;
 
    //  derive INI filename, and see if it exists
-   status = find_exe_location() ;
+   // status = find_exe_location() ;
 
    //  select a group name
    if (group_name == 0  ||  *group_name == 0)
@@ -104,14 +104,6 @@ registry_iface::registry_iface(char *group_name) :
       fprintf(fd, "[%s]\n", grp_name) ;
       fclose(fd) ;
    }
-}
-
-//************************************************************
-//  class destructor
-//************************************************************
-registry_iface::~registry_iface()
-{
-   //  nothing to do so far
 }
 
 //*************************************************************

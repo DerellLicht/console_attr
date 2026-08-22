@@ -48,9 +48,8 @@ private:
    int  GetRegifProfileString(char *field, char *dflt, char *bfr, int bfrsize) ;
    
 public:
-//lint -esym(1712, registry_iface)  default constructor not defined for class 'registry_iface'
     registry_iface(char *group_name) ;
-   ~registry_iface(void) ;
+   // ~registry_iface(void) ;
    int  change_group(char *group_name) ;
    int  get_status(void) { return status ; } ;
    int  ini_file_exists(void) { return ini_exists ; } ;

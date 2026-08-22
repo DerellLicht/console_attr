@@ -1,6 +1,6 @@
 unknownMacro:der_libs\common_win.cpp:272
 unknownMacro:dialog.cpp:70
-unreadVariable:regif.cpp:215
+unreadVariable:regif.cpp:207
 
 unusedFunction
 missingIncludeSystem
