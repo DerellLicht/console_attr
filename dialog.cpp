@@ -1,5 +1,5 @@
 //**************************************************************************
-//  Console Palette Changer, Copyright (c) 2006-2007  Daniel D. Miller
+//  Console Palette Changer, Copyright (c) 2006-2026  Daniel D. Miller
 //  This application and all associated source code is hereby declared
 //  to be in the public domain.
 //  
@@ -19,11 +19,14 @@
 
 static char szClassName[] = "Console Palette Changer V1.05" ;
 
+#define INITGUID
 #include <windows.h>
-#include <stdio.h>   //  sprintf, needed for double
-#include <stdlib.h>  //  _MAX_PATH
+#include <cstdio>   //  sprintf, needed for double
+#include <cstdlib>  //  _MAX_PATH
 #include <sys/stat.h>
+#include <string>
 #include <shlobj.h>
+#include <shobjidl.h>   // IFileDialog, IShellItem
 #include <htmlhelp.h>
 
 #include "resource.h"
@@ -52,11 +55,21 @@ IDC_PEBTN04, IDC_PEBTN05, IDC_PEBTN06, IDC_PEBTN07,
 IDC_PEBTN08, IDC_PEBTN09, IDC_PEBTN10, IDC_PEBTN11,
 IDC_PEBTN12, IDC_PEBTN13, IDC_PEBTN14, IDC_PEBTN15 } ;
 
-static TCHAR szPalFilter[]  = TEXT ("Palette Files (*.PLT)\0*.plt\0")  \
-                              TEXT ("All Files (*.*)\0*.*\0\0") ;
-static TCHAR szExecFilter[] = TEXT ("Executable Files (*.EXE)\0*.exe\0")  \
-                              TEXT ("All Files (*.*)\0*.*\0\0") ;
-static TCHAR szDirFilter[]  = TEXT ("All Files (*.*)\0*.*\0\0") ;
+// static TCHAR szPalFilter[]  = TEXT ("Palette Files (*.PLT)\0*.plt\0")  \
+//                               TEXT ("All Files (*.*)\0*.*\0\0") ;
+// static TCHAR szExecFilter[] = TEXT ("Executable Files (*.EXE)\0*.exe\0")  \
+//                               TEXT ("All Files (*.*)\0*.*\0\0") ;
+// static TCHAR szDirFilter[]  = TEXT ("All Files (*.*)\0*.*\0\0") ;
+
+const COMDLG_FILTERSPEC PalFilter[] = {
+ { L"Palette Files (*.plt)", L"*.plt" },
+ { L"All files (*.*)",       L"*.*"   }
+};
+
+const COMDLG_FILTERSPEC ExecFilter[] = {
+ { L"Executable Files (*.exe)", L"*.exe" },
+ { L"All files (*.*)",          L"*.*"   }
+};
 
 // static registry_iface inireg("dialog") ;
 //********************************************************
@@ -302,6 +315,240 @@ static void Solid_Rect(HDC hdc, int xl, int yu, int xr, int yl, COLORREF Color)
    DeleteObject (hBrush) ;
 }
 
+//************************************************************************
+// Opens the modern file-picker dialog (IFileDialog, no FOS_PICKFOLDERS).
+// hwndOwner may be nullptr. filters/filterCount describe the file-type
+// dropdown (pass nullptr/0 for "all files"). On success, writes the chosen
+// file path into outPath and returns true. On cancel or failure, outPath
+// is left untouched and the function returns false. Handles COM init/
+// uninit internally, same as BrowseForFolder().
+//************************************************************************
+bool BrowseForFile(HWND hwndOwner, std::wstring& outPath,
+                    const COMDLG_FILTERSPEC* filters = nullptr,
+                    UINT filterCount = 0)
+{
+    bool weInitializedCom = false;
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (hr == S_OK || hr == S_FALSE) {
+        weInitializedCom = true;
+    }
+    else if (hr != RPC_E_CHANGED_MODE) {
+        return false;
+    }
+
+    bool result = false;
+    IFileDialog* pfd = nullptr;
+
+    hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER,
+                           IID_PPV_ARGS(&pfd));
+    if (SUCCEEDED(hr)) {
+        if (filters != nullptr && filterCount > 0) {
+            pfd->SetFileTypes(filterCount, filters);
+            pfd->SetFileTypeIndex(1); // 1-based; first filter selected by default
+        }
+
+        hr = pfd->Show(hwndOwner);
+        if (SUCCEEDED(hr)) {
+            IShellItem* psi = nullptr;
+            hr = pfd->GetResult(&psi);
+            if (SUCCEEDED(hr)) {
+                PWSTR pszPath = nullptr;
+                hr = psi->GetDisplayName(SIGDN_FILESYSPATH, &pszPath);
+                if (SUCCEEDED(hr)) {
+                    outPath = pszPath;
+                    CoTaskMemFree(pszPath);
+                    result = true;
+                }
+                psi->Release();
+            }
+        }
+        // hr == HRESULT_FROM_WIN32(ERROR_CANCELLED) just means the user hit Cancel.
+
+        pfd->Release();
+    }
+
+    if (weInitializedCom) {
+        CoUninitialize();
+    }
+
+    return result;
+}
+
+//************************************************************************
+// Opens the modern folder-picker dialog (IFileDialog + FOS_PICKFOLDERS).
+// hwndOwner may be nullptr. On success, writes the chosen folder path into
+// outPath and returns true. On cancel or failure, outPath is left untouched
+// and the function returns false. Handles COM init/uninit internally, so
+// it's safe to call even if the caller hasn't already called CoInitialize.
+//************************************************************************
+bool BrowseForFolder(HWND hwndOwner, std::wstring& outPath)
+{
+    bool weInitializedCom = false;
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (hr == S_OK || hr == S_FALSE) {
+        weInitializedCom = true;
+    }
+    else if (hr != RPC_E_CHANGED_MODE) {
+        // Some other real failure initializing COM.
+        return false;
+    }
+
+    bool result = false;
+    IFileDialog* pfd = nullptr;
+
+    hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+    if (SUCCEEDED(hr)) {
+        DWORD options = 0;
+        hr = pfd->GetOptions(&options);
+        if (SUCCEEDED(hr)) {
+            hr = pfd->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+        }
+
+        if (SUCCEEDED(hr)) {
+            hr = pfd->Show(hwndOwner);
+            if (SUCCEEDED(hr)) {
+                IShellItem* psi = nullptr;
+                hr = pfd->GetResult(&psi);
+                if (SUCCEEDED(hr)) {
+                    PWSTR pszPath = nullptr;
+                    hr = psi->GetDisplayName(SIGDN_FILESYSPATH, &pszPath);
+                    if (SUCCEEDED(hr)) {
+                        outPath = pszPath;
+                        CoTaskMemFree(pszPath);
+                        result = true;
+                    }
+                    psi->Release();
+                }
+            }
+            // hr == HRESULT_FROM_WIN32(ERROR_CANCELLED) just means the user hit Cancel.
+        }
+
+        pfd->Release();
+    }
+
+    if (weInitializedCom) {
+        CoUninitialize();
+    }
+
+    return result;
+}
+
+//************************************************************************
+// Opens the modern save-file dialog (IFileDialog via CLSID_FileSaveDialog).
+// hwndOwner may be nullptr. filters/filterCount describe the file-type
+// dropdown (pass nullptr/0 for "all files"). defaultName, if non-null,
+// pre-fills the filename edit box (e.g. L"untitled.cfg"). Unlike
+// BrowseForFile(), the returned path need not already exist -- that's
+// the point. On success, writes the path into outPath and returns true.
+// On cancel or failure, outPath is left untouched and the function
+// returns false. Handles COM init/uninit internally, same as the others.
+//************************************************************************
+bool BrowseForFileSave(HWND hwndOwner, std::wstring& outPath,
+                        const COMDLG_FILTERSPEC* filters = nullptr,
+                        UINT filterCount = 0,
+                        const wchar_t* defaultName = nullptr)
+{
+    bool weInitializedCom = false;
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (hr == S_OK || hr == S_FALSE) {
+        weInitializedCom = true;
+    }
+    else if (hr != RPC_E_CHANGED_MODE) {
+        return false;
+    }
+
+    bool result = false;
+    IFileDialog* pfd = nullptr;
+
+    hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+    if (SUCCEEDED(hr)) {
+        if (filters != nullptr && filterCount > 0) {
+            pfd->SetFileTypes(filterCount, filters);
+            pfd->SetFileTypeIndex(1); // 1-based; first filter selected by default
+        }
+
+        if (defaultName != nullptr) {
+            pfd->SetFileName(defaultName);
+        }
+
+        hr = pfd->Show(hwndOwner);
+        if (SUCCEEDED(hr)) {
+            IShellItem* psi = nullptr;
+            hr = pfd->GetResult(&psi);
+            if (SUCCEEDED(hr)) {
+                PWSTR pszPath = nullptr;
+                hr = psi->GetDisplayName(SIGDN_FILESYSPATH, &pszPath);
+                if (SUCCEEDED(hr)) {
+                    outPath = pszPath;
+                    CoTaskMemFree(pszPath);
+                    result = true;
+                }
+                psi->Release();
+            }
+        }
+        // hr == HRESULT_FROM_WIN32(ERROR_CANCELLED) just means the user hit Cancel.
+
+        pfd->Release();
+    }
+
+    if (weInitializedCom) {
+        CoUninitialize();
+    }
+
+    return result;
+}
+
+//**************************************************************************
+//  Claude: convert the wchar_t file/folder names to char strings 
+//**************************************************************************
+std::string WideToNarrow(const std::wstring& w)
+{
+    if (w.empty()) return {};
+    int len = WideCharToMultiByte(CP_ACP, 0, w.c_str(), (int)w.size(),
+                                   nullptr, 0, nullptr, nullptr);
+    std::string s(len, 0);
+    WideCharToMultiByte(CP_ACP, 0, w.c_str(), (int)w.size(),
+                         s.data(), len, nullptr, nullptr);
+    return s;
+}
+
+//**************************************************************************
+//  Claude: example usage for BrowseForFile()
+//  removed 'static' to avoid compiler warning -Wunused-variable
+//**************************************************************************
+// static 
+void file_search_usage_examples(HWND hwndMain)
+{
+   //  usage, no filters (all files):
+   std::wstring file;
+   if (BrowseForFile(hwndMain, file)) {
+      // use file
+   }
+   
+   // Usage, with a filter (e.g. your program's own config/data files):
+   const COMDLG_FILTERSPEC filters[] = {
+      { L"Config files (*.cfg)", L"*.cfg" },
+      { L"All files (*.*)",      L"*.*"   }
+   };
+
+   std::wstring file2;
+   if (BrowseForFile(hwndMain, file2, filters, ARRAYSIZE(filters))) {
+      // use file
+   }
+   
+   // examples for 
+   const COMDLG_FILTERSPEC sfilters[] = {
+      { L"Config files (*.cfg)", L"*.cfg" },
+      { L"All files (*.*)",      L"*.*"   }
+   };
+
+   std::wstring file3;
+   if (BrowseForFileSave(hwndMain, file3, sfilters, ARRAYSIZE(sfilters), L"untitled.cfg")) {
+      // use file — may not exist on disk yet
+   }   
+   
+}
+
 //**************************************************************************
 static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM lParam )
 {
@@ -368,8 +615,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          window_left = (DesktopRect.right - DialogRect.right) / 2 ;
          window_top  = (DesktopRect.bottom - DialogRect.bottom) / 2 ;
          // SetWindowPos( hDlgWnd, HWND_TOP, window_left, window_top, 0,0, SWP_NOSIZE );
-         // inireg.set_param("window_top",  window_top) ;
-         // inireg.set_param("window_left", window_left) ;
          save_cfg_file() ;
       }
       // else {
@@ -431,7 +676,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       // InvalidateRect(hDlgWnd, NULL, TRUE);
       return FALSE ;
    }
-   break;
 
    case WM_CTLCOLORSTATIC:
    {
@@ -443,7 +687,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
        SetBkMode(hdcStatic, TRANSPARENT);
        return (LONG) g_hbrBackground;
    }
-   break;
 
    case WM_EXITSIZEMOVE:
       {
@@ -451,8 +694,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       GetWindowRect(hDlgWnd, &rect);
       window_top = rect.top ;
       window_left = rect.left ;
-      // inireg.set_param("window_top",  window_top) ;
-      // inireg.set_param("window_left", window_left) ;
       save_cfg_file() ;
       }
       break ;
@@ -561,9 +802,8 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 //          rt.bottom -= iChange;
 //          dc.DrawFocusRect(rt);
 //       }
-      return TRUE;
       }         
-   break;
+      return TRUE;
 
    case WM_SYSCOMMAND:
       switch (LOWORD(wParam)) {
@@ -609,53 +849,20 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          sprintf(szText, "%.1f", brighten) ;
          // IDC_EDIT3
          SetDlgItemText(hDlgWnd, IDC_EDIT1, szText) ;
-         // inireg.set_param("brighten", brighten) ;
          save_cfg_file() ;
          return TRUE;
       break;   //  end IDC_BUTTON1
 
       case IDC_BUTTON2:   //  select command processor
          {
-         OPENFILENAME ofn;       // common dialog box structure
-         char szFile[260];       // buffer for file name
-         char dirFile[260];       // buffer for file name
-         // HWND hwnd;              // owner window
-         // HANDLE hf;              // file handle
-
-         // Initialize OPENFILENAME
-         ZeroMemory(&ofn, sizeof(ofn));
-         ofn.lStructSize = sizeof(ofn);
-         ofn.hwndOwner = hDlgWnd;
-         ofn.lpstrFile = szFile;
-         //
-         // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-         // use the contents of szFile to initialize itself.
-         //
-         ofn.lpstrFile[0] = '\0';
-         strcpy(dirFile, cmd_proc_filename) ;
-         char *strptr = strrchr(dirFile, '\\') ;
-         if (strptr != 0) {
-            strptr++ ;  //  leave the backslash in place
-            *strptr = 0 ;  //  strip off filename
-            // syslog(dirFile) ;
-         }
-         ofn.lpstrInitialDir = dirFile ;
-         ofn.nMaxFile = sizeof(szFile);
-         // ofn.lpstrFilter = "All\0*.*\0EXE files\0*.EXE\0";
-         ofn.lpstrFilter = szExecFilter ;
-         ofn.lpstrDefExt = TEXT ("exe") ;
-         ofn.nFilterIndex = 1;
-         ofn.lpstrFileTitle = NULL;
-         ofn.lpstrTitle = "select command processor" ;
-         ofn.nMaxFileTitle = 0;
-         ofn.lpstrInitialDir = NULL;
-         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-         // Display the Open dialog box. 
-         if (GetOpenFileName(&ofn) == TRUE) {
-            strncpy(cmd_proc_filename, ofn.lpstrFile, sizeof(cmd_proc_filename)) ;
-            // inireg.set_param("cmdprog", cmd_proc_filename) ;
+         std::wstring fileExec;
+         if (BrowseForFile(hDlgWnd, fileExec, ExecFilter, ARRAYSIZE(ExecFilter))) {
+             // use file
+            std::string fileExecA = WideToNarrow(fileExec);
+         
+            strncpy(cmd_proc_filename, fileExecA.c_str(), sizeof(cmd_proc_filename)) ;
             save_cfg_file() ;
+            SetFocus(hDlgWnd) ;  //  this generates WM_PAINT, to redraw the text controls
             return TRUE;
          }
          }
@@ -663,51 +870,15 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
       case IDC_BUTTON3:   //  select palette file
          {
-         OPENFILENAME ofn;       // common dialog box structure
-         char szFile[260];       // buffer for file name
-         char oldFile[260];       // buffer for file name
-         char dirFile[260];       // buffer for file name
-         // HWND hwnd;              // owner window
-         // HANDLE hf;              // file handle
-
-         // Initialize OPENFILENAME
-         ZeroMemory(&ofn, sizeof(ofn));
-         ofn.lStructSize = sizeof(ofn);
-         ofn.hwndOwner = hDlgWnd;
-         ofn.lpstrFile = szFile;
-         //
-         // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-         // use the contents of szFile to initialize itself.
-         //
-         ofn.lpstrFile[0] = '\0';
-         strcpy(dirFile, palette_filename) ;
-         char *strptr = strrchr(dirFile, '\\') ;
-         if (strptr != 0) {
-            strptr++ ;  //  leave the backslash in place
-            *strptr = 0 ;  //  strip off filename
-            // syslog(dirFile) ;
-         }
-         ofn.lpstrInitialDir = dirFile ;
-         ofn.nMaxFile = sizeof(szFile);
-         ofn.lpstrFilter = szPalFilter ;
-         ofn.nFilterIndex = 1;
-         ofn.lpstrTitle = "select palette file" ;
-         ofn.lpstrFileTitle = NULL ;
-         ofn.lpstrDefExt = TEXT ("plt") ;
-         // ofn.nMaxFileTitle = 0;
-         // ofn.lpstrInitialDir = NULL;
-         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-         // Display the Open dialog box. 
-         if (GetOpenFileName(&ofn) == TRUE) {
-            // hf = CreateFile(ofn.lpstrFile, GENERIC_READ,
-            //     0, (LPSECURITY_ATTRIBUTES) NULL,
-            //     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-            //     (HANDLE) NULL);         
+         char oldFile[MAX_PATH_LEN];       // buffer for file name
+         // const COMDLG_FILTERSPEC PalFilter[] = {
+         std::wstring filePal;
+         if (BrowseForFile(hDlgWnd, filePal, PalFilter, ARRAYSIZE(PalFilter))) {
+             // use file
+            std::string filePalA = WideToNarrow(filePal);
+         
             strncpy(oldFile, palette_filename, sizeof(oldFile)) ;
-            strncpy(palette_filename, ofn.lpstrFile, sizeof(palette_filename)) ;
-            // SetDlgItemText(hDlgWnd, IDC_EDIT3, palette_filename) ;
-            // inireg.set_param("palette", palette_filename) ;
+            strncpy(palette_filename, filePalA.c_str(), sizeof(palette_filename)) ;
             save_cfg_file() ;
 
             int result = read_palette_file(palette_filename, brighten);
@@ -716,62 +887,25 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
                strncpy(palette_filename, oldFile, sizeof(palette_filename)) ;
             }
             dirty_flag = 1 ;
-            SetFocus(hDlgWnd) ;
-            return TRUE;
+            SetFocus(hDlgWnd) ;  //  this generates WM_PAINT, to redraw the text controls
          }
          }
       break;   //  end IDC_BUTTON3
 
       case IDC_BUTTON4:   //  select starting directory
          {
-         OPENFILENAME ofn;       // common dialog box structure
-         char szFile[260];       // buffer for file name
-         char dirFile[260];       // buffer for file name
-
-         // Initialize OPENFILENAME
-         ZeroMemory(&ofn, sizeof(ofn));
-         ofn.lStructSize = sizeof(ofn);
-         ofn.hwndOwner = hDlgWnd;
-         ofn.lpstrFile = szFile;
-         //
-         // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-         // use the contents of szFile to initialize itself.
-         //
-         ofn.lpstrFile[0] = '\0';
-         strcpy(dirFile, starting_path) ;
-         // char *strptr = strrchr(dirFile, '\\') ;
-         // if (strptr != 0) {
-         //    strptr++ ;  //  leave the backslash in place
-         //    *strptr = 0 ;  //  strip off filename
-         //    // syslog("%s\n", dirFile) ;
-         // }
-         ofn.lpstrInitialDir = dirFile ;
-         ofn.nMaxFile = sizeof(szFile);
-         ofn.lpstrFilter = szDirFilter ;
-         ofn.nFilterIndex = 1;
-         ofn.lpstrTitle = "select console launch directory" ;
-         ofn.lpstrFileTitle = NULL ;
-         ofn.lpstrDefExt = TEXT ("") ;
-         // ofn.nMaxFileTitle = 0;
-         // ofn.lpstrInitialDir = NULL;
-         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-         // Display the Open dialog box. 
-         if (GetOpenFileName(&ofn) == TRUE) {
-            strncpy(starting_path, ofn.lpstrFile, sizeof(starting_path)) ;
-            char *strptr = strrchr(starting_path, '\\') ;
-            if (strptr != 0) {
-               // strptr++ ;  //  leave the backslash in place
-               *strptr = 0 ;  //  strip off filename
-               // syslog("%s\n", dirFile) ;
-            }
-            // inireg.set_param("startpath", starting_path) ;
+         // return select_starting_directory(hDlgWnd);
+         std::wstring folder;
+         if (BrowseForFolder(hDlgWnd, folder)) {
+            std::string folderA = WideToNarrow(folder);
+            strncpy(starting_path, folderA.c_str(), sizeof(starting_path)) ;
+            // syslog("browse returned: %s\n", folderA.c_str());
+            // strncpy(starting_path, reinterpret_cast<const char *>(folderA.c_str()), sizeof(starting_path)) ;
             save_cfg_file() ;
-            SetFocus(hDlgWnd) ;
-            return TRUE;
+            SetFocus(hDlgWnd) ;  //  this generates WM_PAINT, to redraw the text controls
          }
          }
-      break;   //  end IDC_BUTTON3
+         return TRUE;
 
       case IDC_BUTTON5:   //  write settings to registry
          write_all_consoles() ;
@@ -794,46 +928,22 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          return TRUE;
       break;
 
-      case IDC_BUTTON7:   //  save current palette file
+      case IDC_BUTTON7:   //  "Save Palette File" button
          // sprintf(tempstr, "start %s", cmd_proc_filename) ;
          // system(tempstr) ;
          {
-         OPENFILENAME ofn;       // common dialog box structure
-         char szFile[260];       // buffer for file name
-         char oldFile[260];       // buffer for file name
-
-         // Initialize OPENFILENAME
-         ZeroMemory(&ofn, sizeof(ofn));
-         ofn.lStructSize = sizeof(ofn);
-         ofn.hwndOwner = hDlgWnd;
-         ofn.lpstrFile = szFile;
-         //
-         // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-         // use the contents of szFile to initialize itself.
-         //
-         ofn.lpstrFile[0] = '\0';
-         ofn.nMaxFile = sizeof(szFile);
-         // ofn.lpstrFilter = "All\0*.*\0Palette files\0*.PAL\0";
-         ofn.lpstrFilter = szPalFilter ;
-         ofn.nFilterIndex = 1;
-         ofn.lpstrTitle = "select output palette file" ;
-         ofn.lpstrDefExt = TEXT ("pal") ;
-         // ofn.lpstrFileTitle = NULL;
-         // ofn.nMaxFileTitle = 0;
-         // ofn.lpstrInitialDir = NULL;
-         ofn.Flags = OFN_OVERWRITEPROMPT ;
-
-         // Display the Open dialog box. 
-         if (GetSaveFileName(&ofn) == TRUE) {
-            // hf = CreateFile(ofn.lpstrFile, GENERIC_READ,
-            //     0, (LPSECURITY_ATTRIBUTES) NULL,
-            //     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-            //     (HANDLE) NULL);         
+         // const COMDLG_FILTERSPEC PalFilter[] = {
+         char oldFile[MAX_PATH_LEN];       // buffer for file name
+         std::wstring filePal;
+      // if (BrowseForFileSave(hwndMain, file, filters, ARRAYSIZE(filters), L"untitled.cfg")) {
+         if (BrowseForFileSave(hDlgWnd, filePal, PalFilter, ARRAYSIZE(PalFilter), L"untitled.pal")) {
+             // use file
+            std::string filePalA = WideToNarrow(filePal);
+            
             strncpy(oldFile, palette_filename, sizeof(oldFile)) ;
-            strncpy(palette_filename, ofn.lpstrFile, sizeof(palette_filename)) ;
+            strncpy(palette_filename, filePalA.c_str(), sizeof(palette_filename)) ;
             // IDC_EDIT3
             SetDlgItemText(hDlgWnd, IDC_EDIT3, palette_filename) ;
-            // inireg.set_param("palette", palette_filename) ;
             save_cfg_file() ;
 
             int result = write_palette_file(palette_filename, brighten);
@@ -841,8 +951,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
                syslog("%s: %s", palette_filename, strerror(result)) ;
                strncpy(palette_filename, oldFile, sizeof(palette_filename)) ;
             }
-            SetFocus(hDlgWnd) ;
-            return TRUE;
+            SetFocus(hDlgWnd) ;  //  this generates WM_PAINT, to redraw the text controls
          }
          }
          return TRUE;
@@ -881,7 +990,6 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          SetFocus(hDlgWnd) ;
          return TRUE ;
          }         
-         break;
 
       case IDB_CLOSE:   
          PostMessageA(hDlgWnd, WM_CLOSE, 0, 0);

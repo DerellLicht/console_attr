@@ -27,7 +27,7 @@ char *get_system_message(void)
    // Process any inserts in lpMsgBuf.
    // ...
    // Display the string.
-   strncpy(msg, (char *) lpMsgBuf, 260) ;
+   strncpy(msg, (char *) lpMsgBuf, MAX_PATH_LEN) ;
 
    // Free the buffer.
    LocalFree( lpMsgBuf );

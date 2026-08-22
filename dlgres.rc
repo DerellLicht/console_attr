@@ -9,24 +9,27 @@ EXSTYLE WS_EX_APPWINDOW
 CAPTION "console palette changer"
 FONT 12, "Times New Roman"
 BEGIN
-    DEFPUSHBUTTON   "Write palette to registry",IDC_BUTTON5,12,120,124,14
-    PUSHBUTTON      "Launch console with saved palette",IDC_BUTTON6,176,120,131,14
-    PUSHBUTTON      "Save Palette File",IDC_BUTTON7,13,230,124,14
-    PUSHBUTTON      "Help",IDC_BUTTON8,176,230,131,14
+   DEFPUSHBUTTON   "Write palette to registry",IDC_BUTTON5,12,120,124,14
+   PUSHBUTTON      "Launch console with saved palette",IDC_BUTTON6,176,120,131,14
 
-    LTEXT           "Brightness ( 1.0 minimum )",IDC_STATIC,144,31,122,8,SS_CENTERIMAGE
-    EDITTEXT        IDC_EDIT1,97,30,40,10,ES_AUTOHSCROLL
-    PUSHBUTTON      "Update Brightness",IDC_BUTTON1,13,28,71,14
+   CTEXT           "Console Palette Loader",IDC_HEADER, 68,7,186,16,SS_CENTERIMAGE | WS_BORDER
+   PUSHBUTTON      "Close",                 IDB_CLOSE, 270,7, 30,16
 
-    PUSHBUTTON      "select command processor",IDC_BUTTON2,13,50,72,20,BS_MULTILINE
-    EDITTEXT        IDC_EDIT2,97,55,210,10,ES_READONLY
+   LTEXT           "Brightness ( 1.0 minimum )",IDC_STATIC,144,31,122,8,SS_CENTERIMAGE
+   EDITTEXT        IDC_EDIT1,97,30,40,10,ES_AUTOHSCROLL
+   PUSHBUTTON      "Update Brightness",IDC_BUTTON1,13,28,71,14
 
-    PUSHBUTTON      "select palette file",IDC_BUTTON3,13,78,72,13,BS_MULTILINE
-    EDITTEXT        IDC_EDIT3,97,80,210,10,ES_READONLY
+   PUSHBUTTON      "select command processor",IDC_BUTTON2,13,50,72,20,BS_MULTILINE
+   EDITTEXT        IDC_EDIT2,97,55,210,10,ES_READONLY
 
-    CTEXT           "Console Palette Loader",IDC_HEADER, 68,7,186,16,SS_CENTERIMAGE | WS_BORDER
-    PUSHBUTTON      "Close",                 IDB_CLOSE, 270,7, 30,16
+   PUSHBUTTON      "select palette file",IDC_BUTTON3,13,78,72,13,BS_MULTILINE
+   EDITTEXT        IDC_EDIT3,97,80,210,10,ES_READONLY
 
-    PUSHBUTTON      "starting directory",IDC_BUTTON4,13,98,72,13,BS_MULTILINE
-    EDITTEXT        IDC_EDIT4,97,100,210,10,ES_READONLY
+   PUSHBUTTON      "starting directory",IDC_BUTTON4,13,98,72,13,BS_MULTILINE
+   EDITTEXT        IDC_EDIT4,97,100,210,10,ES_READONLY
+    
+   // bottom buttons
+   PUSHBUTTON      "Save Palette File",IDC_BUTTON7,13,230,124,14
+   PUSHBUTTON      "Help",IDC_BUTTON8,176,230,131,14
+
 END

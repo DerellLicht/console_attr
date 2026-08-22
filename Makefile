@@ -46,7 +46,7 @@ LINTFILES=lintdefs.cpp lintdefs.ref.h
 
 OBJS = $(CPPSRC:.cpp=.o) dlgres.o
 
-LIBS=-lcomdlg32 -lgdi32 -lhtmlhelp
+LIBS=-lcomdlg32 -lole32 -lgdi32 -lhtmlhelp
 
 BIN = console_attr
 BINS = $(BIN).exe
