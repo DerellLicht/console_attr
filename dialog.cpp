@@ -22,7 +22,7 @@ static char szClassName[] = "Console Palette Changer V1.05" ;
 #include <windows.h>
 #include <cstdio>   //  sprintf, needed for double
 #include <cstdlib>  //  _MAX_PATH
-#include <sys/stat.h>
+// #include <sys/stat.h>
 #include <string>
 #include <shlobj.h>
 // #include <shobjidl.h>   // IFileDialog, IShellItem
@@ -105,8 +105,6 @@ int setup_palette_filename()
 
 //*****************************************************************
 static char chmname[1024] ;
-// unsigned chmmode = 0 ;
-// unsigned chm_exists = 0 ;
 
 static int find_chm_location(void)
 {
@@ -117,11 +115,6 @@ static int find_chm_location(void)
    }
    // syslog("chm name: %s\n", chmname);
    // chm name: D:\SourceCode\Git\console_attr\console_attr.chm
-
-   //  lastly, see if file already exists
-   // struct stat st ;
-   // int result = stat(chmname, &st) ;
-   // chm_exists = (result == 0) ? 1 : 0 ;
    return 0;
 }
 
@@ -189,14 +182,11 @@ static void Box(HDC hdc, int x0, int y0, int x1, int y1, COLORREF Color)
 }
 
 //*******************************************************************************
+//  EDIT5 is a graphics region where example text is written
+//*******************************************************************************
 static void update_edit5(HWND hDlgWnd, HDC hdc) 
-// void update_edit5(HWND hDlgWnd) 
 {
    // HWND hEditwnd = GetDlgItem(hDlgWnd, IDC_EDIT5);
-   // HDC hdc = GetDC(hDlgWnd) ;
-   if (hdc == nullptr) {
-      syslog("update_edit5: GetDC: %s", get_system_message()) ;
-   }
 
    //*********************************
    //  Clear edit window
@@ -456,10 +446,12 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       SetDlgItemText(hDlgWnd, IDC_EDIT3, palette_filename) ;
       SetDlgItemText(hDlgWnd, IDC_EDIT4, starting_path) ;
       {
+      //  write brightness value
       char tempstr[20];
       sprintf(tempstr, "%.1f", brighten) ;
       SetDlgItemText(hDlgWnd, IDC_EDIT1, tempstr) ;
       }
+      //  update sample-text region
       update_edit5(hDlgWnd, hdc) ;
       dprints_centered_x(hDlgWnd, Edit5Rect.bottom+20, 0, "Palette Edit Buttons");
       EndPaint (hDlgWnd, &ps);

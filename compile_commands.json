@@ -100,5 +100,22 @@
    "ClearIcon.o"
   ],
   "file": "ClearIcon.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "der_libs/claude_browsers.cpp",
+   "-o",
+   "der_libs/claude_browsers.o"
+  ],
+  "file": "der_libs/claude_browsers.cpp"
  }
 ]
