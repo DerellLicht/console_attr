@@ -62,9 +62,9 @@ clean:
 	rm -f $(OBJS) $(BINS) *~ *.zip
 
 dist:
-	rm -f $(BIN).zip
-	zip $(BIN).zip *.exe console_attr.chm Readme.md LICENSE.txt palettes
-	zip -r $(BIN).zip palettes\*
+	rm -f *.zip
+	zip console.palette.chgr..zip *.exe console_attr.chm Readme.md LICENSE.txt palettes
+	zip -r console.palette.chgr..zip palettes\*
 	
 
 wc:
