@@ -1,5 +1,6 @@
  #include <windows.h>
 #include "resource.h"
+#include "version.h"
 
 IDI_ICON ICON "colors.ico"
 
@@ -9,11 +10,7 @@ EXSTYLE WS_EX_APPWINDOW
 CAPTION "console palette changer"
 FONT 12, "Times New Roman"
 BEGIN
-   DEFPUSHBUTTON   "Write palette to registry",IDC_BUTTON5,12,120,124,14
-   PUSHBUTTON      "Launch console with saved palette",IDC_BUTTON6,176,120,131,14
-
    CTEXT           "Console Palette Loader",IDC_HEADER, 68,7,186,16,SS_CENTERIMAGE | WS_BORDER
-   PUSHBUTTON      "Close",                 IDB_CLOSE, 270,7, 30,16
 
    LTEXT           "Brightness ( 1.0 minimum )",IDC_STATIC,144,31,122,8,SS_CENTERIMAGE
    EDITTEXT        IDC_EDIT1,97,30,40,10,ES_AUTOHSCROLL
@@ -27,9 +24,74 @@ BEGIN
 
    PUSHBUTTON      "starting directory",IDC_BUTTON4,13,98,72,13,BS_MULTILINE
    EDITTEXT        IDC_EDIT4,97,100,210,10,ES_READONLY
-    
+
+   // middle buttons    
+   PUSHBUTTON      "Write palette to registry",   IDC_BUTTON5,  12, 120,  92, 14
+   PUSHBUTTON      "Save Palette File",           IDC_BUTTON7, 113, 120,  92, 14
+   PUSHBUTTON      "Launch console with palette", IDC_BUTTON6, 215, 120,  92, 14
+
    // bottom buttons
-   PUSHBUTTON      "Save Palette File",IDC_BUTTON7,13,230,124,14
-   PUSHBUTTON      "Help",IDC_BUTTON8,176,230,131,14
+   PUSHBUTTON      "Help",                        IDB_HELP,     12, 230,  92, 14
+   PUSHBUTTON      "About",                       IDB_ABOUT,   113, 230,  92, 14
+   PUSHBUTTON      "Close",                       IDB_CLOSE,   215, 230,  92, 14
 
 END
+
+//*******************************************************************
+IDD_ABOUT DIALOG DISCARDABLE  800, 200, 180, 90
+// STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "About console_attr"
+FONT 10, "Times New Roman"
+BEGIN
+//  Note about the ICON control...
+//  The "optional" parameters are *not* optional when building with Clang windres.exe ...
+// ICON text, id, x, y [, width, height, style [, extended-style]]
+    ICON            IDI_ICON,                  IDC_STATIC,                          9, 12,  0, 0, SS_ICON
+    LTEXT           "Console Palette Changer ",IDC_STATIC,                         36, 15, 75,12
+    LTEXT           VerNumA,IDC_VERNUM,                                           116, 15, 50,12
+    LTEXT           "Copyright (c) 2006-2026", IDC_STATIC,                         36, 28, 75,10
+    LTEXT           "Derell Licht",            IDC_STATIC,                        112, 28,100,10
+    LTEXT           "http://derelllicht.42web.io/console_attr.html", IDC_WEBLINK,  36, 42,137,10
+    LTEXT           "http://github.com/DerellLicht/console_attr",    IDC_WEBLINK2, 36, 56,137,10
+    DEFPUSHBUTTON   "Close",                                                 IDOK, 36, 70,100,14
+END
+
+/////////////////////////////////////////////////////////////////////////////
+// 
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "Console Palette Changer"
+            VALUE "CompanyName", "Cathartes Aura"
+            VALUE "FileDescription", "Console Palette Changer"
+            VALUE "FileVersion", VerNumA
+            VALUE "InternalName", "console_attr"
+            VALUE "LegalCopyright", "Copyright (c) 2008-2026"
+            VALUE "OriginalFilename", "console_attr.exe"
+            VALUE "ProductName", "Console Palette Changer"
+            VALUE "ProductVersion", VerNumA
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+

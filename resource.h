@@ -3,6 +3,8 @@
 #define IDD_DIALOG                      101
 #define IDC_DLG_TEXT                    102
 #define IDAPPLICON                      103
+#define IDC_VERNUM                      104
+#define IDD_ABOUT                       105
 
 #define IDC_EDIT1                      1000
 #define IDC_BUTTON1                    1001
@@ -17,8 +19,12 @@
 #define IDC_BUTTON6                    1010
 #define IDC_BUTTON7                    1011
 #define IDC_HEADER                     1012
-#define IDC_BUTTON8                    1013
-#define IDB_CLOSE                      1014
+#define IDB_HELP                       1013
+#define IDB_ABOUT                      1014
+#define IDB_CLOSE                      1015
+
+#define IDC_WEBLINK                    1500
+#define IDC_WEBLINK2                   1501
 
 #define IDC_PEBTN00                    2000
 #define IDC_PEBTN01                    2001

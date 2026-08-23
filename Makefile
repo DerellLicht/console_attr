@@ -37,13 +37,12 @@ ifeq ($(USE_STATIC),YES)
 LFLAGS += -static
 endif
 
-CPPSRC=dialog.cpp console.attr.cpp config.cpp ClearIcon.cpp \
-der_libs/claude_browsers.cpp \
+CPPSRC=dialog.cpp console.attr.cpp config.cpp ClearIcon.cpp about.cpp \
 der_libs/common_funcs.cpp \
-der_libs/common_win.cpp 
+der_libs/common_win.cpp \
+der_libs/claude_browsers.cpp \
+der_libs/hyperlinks.cpp 
 # der_libs/qualify.cpp 
-
-LINTFILES=lintdefs.cpp lintdefs.ref.h 
 
 OBJS = $(CPPSRC:.cpp=.o) dlgres.o
 
@@ -79,9 +78,6 @@ cppc:
 check:
 	cmd /C "d:\llvm\bin\clang-tidy.exe $(CPPSRC)"
 
-lint:
-	cmd /C "c:\lint9\lint-nt +v -width(160,4) $(LiFLAGS) -ic:\lint9 mingw.lnt -os(_lint.tmp) $(LINTFILES) $(CPPSRC)"
-
 depend: 
 	makedepend $(IFLAGS) $(CPPSRC)
 
@@ -94,11 +90,13 @@ dlgres.o: dlgres.rc resource.h
 # DO NOT DELETE
 
 dialog.o: resource.h der_libs/common.h der_libs/commonw.h console.attr.h
-dialog.o: der_libs/claude_browsers.h config.h
+dialog.o: der_libs/claude_browsers.h version.h config.h
 console.attr.o: der_libs/common.h console.attr.h
 config.o: der_libs/common.h console.attr.h config.h
 ClearIcon.o: der_libs/common.h der_libs/commonw.h console.attr.h config.h
-der_libs/claude_browsers.o: der_libs/common.h der_libs/commonw.h
-der_libs/claude_browsers.o: der_libs/claude_browsers.h
+about.o: resource.h version.h der_libs/hyperlinks.h
 der_libs/common_funcs.o: der_libs/common.h
 der_libs/common_win.o: der_libs/common.h der_libs/commonw.h
+der_libs/claude_browsers.o: der_libs/common.h der_libs/commonw.h
+der_libs/claude_browsers.o: der_libs/claude_browsers.h
+der_libs/hyperlinks.o: der_libs/iface_32_64.h der_libs/hyperlinks.h

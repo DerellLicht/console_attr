@@ -17,15 +17,11 @@
 // 1.05  08/21/26    Porting to modern clang++
 //**************************************************************************
 
-static char szClassName[] = "Console Palette Changer V1.05" ;
-
 #include <windows.h>
 #include <cstdio>   //  sprintf, needed for double
 #include <cstdlib>  //  _MAX_PATH
-// #include <sys/stat.h>
 #include <string>
 #include <shlobj.h>
-// #include <shobjidl.h>   // IFileDialog, IShellItem
 #include <htmlhelp.h>
 
 #include "resource.h"
@@ -33,7 +29,10 @@ static char szClassName[] = "Console Palette Changer V1.05" ;
 #include "commonw.h"
 #include "console.attr.h"
 #include "claude_browsers.h"
+#include "version.h"
 #include "config.h"
+
+static char szClassName[] = "Console Palette Changer " VerNumA  ;
 
 #define BUFFER_SIZE 256
 static unsigned dirty_flag = 0 ;
@@ -89,6 +88,9 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 static GUID guidComprocPath  = MakeStableGuidFromLabel("console_attr.ComprocPath");
 static GUID guidPalettePath  = MakeStableGuidFromLabel("console_attr.PalettePath");
 static GUID guidStartingPath = MakeStableGuidFromLabel("console_attr.StartingPath");
+
+//  about.cpp
+extern BOOL CmdAbout(HWND hwnd);
 
 //*******************************************************************************
 int setup_palette_filename()
@@ -693,7 +695,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          return TRUE;
       break;
 
-      case IDC_BUTTON8:   //  display help dialog
+      case IDB_HELP:   //  display help dialog
          //  MinGw gives a couple of indecipherable warnings about this:
          // Warning: .drectve `-defaultlib:uuid.lib ' unrecognized
          // Warning: .drectve `-defaultlib:uuid.lib ' unrecognized   
@@ -701,6 +703,10 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          HtmlHelp(hDlgWnd, chmname, HH_DISPLAY_TOPIC, 0L);
          return TRUE;
       break;
+
+      case IDB_ABOUT:   //  display about dialog
+         CmdAbout(hDlgWnd);
+         return TRUE;
 
       //  this handles the Palette Edit Buttons
       case IDC_PEBTN00:

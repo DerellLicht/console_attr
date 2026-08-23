@@ -117,5 +117,39 @@
    "der_libs/claude_browsers.o"
   ],
   "file": "der_libs/claude_browsers.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "about.cpp",
+   "-o",
+   "about.o"
+  ],
+  "file": "about.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "der_libs/hyperlinks.cpp",
+   "-o",
+   "der_libs/hyperlinks.o"
+  ],
+  "file": "der_libs/hyperlinks.cpp"
  }
 ]
