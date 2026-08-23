@@ -63,7 +63,9 @@ clean:
 
 dist:
 	rm -f $(BIN).zip
-	zip $(BIN).zip *.exe console_attr.chm Readme.md LICENSE.txt
+	zip $(BIN).zip *.exe console_attr.chm Readme.md LICENSE.txt palettes
+	zip -r $(BIN).zip palettes\*
+	
 
 wc:
 	wc -l $(CPPSRC)

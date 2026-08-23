@@ -1,5 +1,13 @@
 - it would be nice if console_attr could generate ConsoleZ's `.xml` file as well  
 
+  This can easily be done by using "Launch console"
+  1. close ConsoleZ
+  2. open a console via "Launch console" in `console_attr.exe`
+  3. run `consattr -x<path to ConsoleZ folder> palette_name`
+  4. open ConsoleZ
+  
+  this process should *also* be documented in help file
+
 - update help file
   > document the settings for manually setting the screen position of the color dialog:
   
