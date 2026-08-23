@@ -966,6 +966,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          return TRUE;
       break;
 
+      //  this handles the Palette Edit Buttons
       case IDC_PEBTN00:
       case IDC_PEBTN01:
       case IDC_PEBTN02:
