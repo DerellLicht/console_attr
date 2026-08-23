@@ -265,26 +265,26 @@ static void update_edit5(HWND hDlgWnd, HDC hdc)
 }  //lint !e715  func params not used
 
 //****************************************************************
-static int select_color(unsigned idx)
-{
-   static CHOOSECOLOR cc ;
-   static COLORREF    crCustColors[16] ;
-
-   ZeroMemory(&cc, sizeof(cc));
-   cc.lStructSize    = sizeof (CHOOSECOLOR) ;
-   // cc.rgbResult      = RGB (0x80, 0x80, 0x80) ;
-   cc.rgbResult      = curr_attr[idx] ;
-   cc.lpCustColors   = crCustColors ;
-   cc.Flags          = CC_RGBINIT | CC_FULLOPEN ;
-
-   if (ChooseColor(&cc) == TRUE) {
-      // return cc.rgbResult ;   //  contains the selected color
-      curr_attr[idx] = cc.rgbResult ;   //  contains the selected color
-      return 1 ;
-   } else {
-      return 0 ;
-   }
-}
+// static int select_color(unsigned idx)
+// {
+//    static CHOOSECOLOR cc ;
+//    static COLORREF    crCustColors[16] ;
+// 
+//    ZeroMemory(&cc, sizeof(cc));
+//    cc.lStructSize    = sizeof (CHOOSECOLOR) ;
+//    // cc.rgbResult      = RGB (0x80, 0x80, 0x80) ;
+//    cc.rgbResult      = curr_attr[idx] ;
+//    cc.lpCustColors   = crCustColors ;
+//    cc.Flags          = CC_RGBINIT | CC_FULLOPEN ;
+// 
+//    if (ChooseColor(&cc) == TRUE) {
+//       // return cc.rgbResult ;   //  contains the selected color
+//       curr_attr[idx] = cc.rgbResult ;   //  contains the selected color
+//       return 1 ;
+//    } else {
+//       return 0 ;
+//    }
+// }
 
 //**************************************************************************
 // A function to create a button

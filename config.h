@@ -19,3 +19,9 @@ extern uint window_left ;
 LRESULT save_cfg_file(void);
 LRESULT init_config(void);
 
+//  ClearIcon.cpp
+extern uint color_x0 ;
+extern uint color_y0 ;
+
+unsigned select_color(COLORREF orig_attr);
+

@@ -55,12 +55,16 @@
 #include <tchar.h>
 
 #include "common.h"
-#include "derbar.h"
 #include "commonw.h"
+#include "console.attr.h"
+#include "config.h"
 
 //***********************************************************************
 // alt_fg_attr=0x41c345
 unsigned ci_attr = 0x41c345 ;
+
+uint color_x0 = 700 ;
+uint color_y0 = 300 ;
 
 /****************************************************************************
  * This hook procedure, which allows ClearIcon to position the color dialog
@@ -78,7 +82,7 @@ static BOOL APIENTRY ChooseColorHookProc(
    case WM_INITDIALOG:
       {
       // DWORD UFLAGS = SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW;
-      MoveWindowPos(hDlg, 400, 300);
+      MoveWindowPos(hDlg, color_x0, color_y0);
       }   
       break;
         
@@ -119,48 +123,3 @@ unsigned select_color(COLORREF orig_attr)
 
    return (ChooseColor(&cc) == TRUE) ? cc.rgbResult : 0 ;
 }
-
-//***************************************************************************
-//  This is Wei Ke's method for setting the background to transparent.  
-//***************************************************************************
-void reset_icon_colors(bool my_select_color)
-{
-   HWND hwnd = FindWindow(L"Progman", L"Program Manager");
-   if ( hwnd == NULL ) {
-      syslog(L"FindWindow failed\n") ;
-      return;
-   }
-   hwnd = FindWindowEx(hwnd, NULL, L"SHELLDLL_DefView", L"");
-   if ( hwnd == NULL ) {
-      syslog(L"FindWindowEx SHELLDLL_DefView failed\n") ;
-      return;
-   }
-   hwnd = FindWindowEx(hwnd, NULL, L"SysListView32", NULL);
-   if ( hwnd == NULL ) {
-      //  Under WinXP:
-      //  FindWindowEx SysListView32: 
-      //    Cannot create a file when that file already exists.
-      syslog(L"FindWindowEx SysListView32: %s\n", get_system_message()) ;
-      return;
-   }
-      
-   //  if color dialog was requested, run it
-   if (my_select_color) {
-      uint temp_attr = select_color(ci_attr) ;
-      //  if user cancels color entry, 
-      //  stick with existing color selection.
-      if (temp_attr != 0) {
-         ci_attr = temp_attr ;
-         save_cfg_file();
-      }
-   }
-
-   //  finally, set screen colors
-   //  the preceding (void) declaration, is merely to avoid warnings about
-   //  not using the return values from the macro functions.
-   (void) ListView_SetTextBkColor(hwnd, CLR_NONE);  //lint !e522
-   (void) ListView_SetTextColor(hwnd, ci_attr) ; //lint !e522
-   InvalidateRect(hwnd, NULL, TRUE);
-   UpdateWindow(hwnd);
-}
-

@@ -71,6 +71,8 @@ LRESULT save_cfg_file(void)
    fprintf(fd.get(), "brighten=%.2f\n", brighten) ;
    fprintf(fd.get(), "window_top=%u\n", window_top) ;
    fprintf(fd.get(), "window_left=%u\n", window_left) ;
+   fprintf(fd.get(), "color_x0=%u\n", color_x0) ;
+   fprintf(fd.get(), "color_y0=%u\n", color_y0) ;
    // fclose(fd) ;
    return ERROR_SUCCESS;
 }
@@ -149,6 +151,14 @@ LRESULT init_config(void)
       } else
       if (strcmp(inpstr, "window_left") == 0) {
          window_left = (unsigned) strtol(tl, NULL, 10) ;
+      } else
+   // fprintf(fd.get(), "color_x0=%u\n", color_x0) ;
+   // fprintf(fd.get(), "color_y0=%u\n", color_y0) ;
+      if (strcmp(inpstr, "color_x0") == 0) {
+         color_x0 = (unsigned) strtol(tl, NULL, 10) ;
+      } else
+      if (strcmp(inpstr, "color_y0") == 0) {
+         color_y0 = (unsigned) strtol(tl, NULL, 10) ;
       } else
       {
          // syslog("unknown: [%s]\n", inpstr) ;

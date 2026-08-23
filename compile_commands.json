@@ -83,5 +83,22 @@
    "config.o"
   ],
   "file": "config.cpp"
+ },
+ {
+  "directory": "D:\\SourceCode\\Git\\console_attr",
+  "arguments": [
+   "d:/llvm/bin/i686-w64-mingw32-clang++",
+   "-Wall",
+   "-O3",
+   "-c",
+   "-Weffc++",
+   "-Wno-write-strings",
+   "-DUSING_CLANG",
+   "-Ider_libs",
+   "ClearIcon.cpp",
+   "-o",
+   "ClearIcon.o"
+  ],
+  "file": "ClearIcon.cpp"
  }
 ]

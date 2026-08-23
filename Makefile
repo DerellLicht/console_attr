@@ -37,7 +37,7 @@ ifeq ($(USE_STATIC),YES)
 LFLAGS += -static
 endif
 
-CPPSRC=dialog.cpp console.attr.cpp config.cpp \
+CPPSRC=dialog.cpp console.attr.cpp config.cpp ClearIcon.cpp \
 der_libs/common_funcs.cpp \
 der_libs/common_win.cpp 
 # der_libs/qualify.cpp 
@@ -94,5 +94,6 @@ dialog.o: resource.h der_libs/common.h der_libs/commonw.h console.attr.h
 dialog.o: config.h
 console.attr.o: der_libs/common.h console.attr.h
 config.o: der_libs/common.h console.attr.h config.h
+ClearIcon.o: der_libs/common.h der_libs/commonw.h console.attr.h config.h
 der_libs/common_funcs.o: der_libs/common.h
 der_libs/common_win.o: der_libs/common.h der_libs/commonw.h

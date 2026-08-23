@@ -13,4 +13,3 @@ void restore_default_colors(void);
 int read_palette_file(char *palette_name, double dbrighten);
 int write_palette_file(char *palette_name, double dbrighten);
 int write_all_consoles(void);
-
