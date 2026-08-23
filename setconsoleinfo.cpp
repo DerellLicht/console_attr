@@ -1,4 +1,4 @@
-//*****************************************************************
+//*****************************************************************************
 // SETCONSOLEINFO.CPP
 //
 // Undocumented method to set console attributes
@@ -10,7 +10,7 @@
 //
 // www.catch22.net
 // 
-//*****************************************************************
+//*****************************************************************************
 //  DDM notes (02/24/07 10:18)
 //  If I compile this with VC6, this all works fine!! 
 //  cl /W3 /O2 /G4 /Feconsattr.exe setconsoleinfo.c kernel32.lib user32.lib
@@ -18,9 +18,12 @@
 //  However, if I try to compile it with mingw,
 //  it crashes on the first or second run.
 //  gcc -Wall -O3 -s $< -o $@ -lcomctl32
-//*****************************************************************
+//*****************************************************************************
+//  version    date        changes
+//    1.04     08/23/26    Added separate <background> field in console.xml
+//*****************************************************************************
 
-static char *VerStr = "Set Console Attributes, Version 1.03" ;
+static char *VerStr = "Set Console Attributes, Version 1.04" ;
 
 // #define WIN32_LEAN_AND_MEAN // this will assume smaller exe... NOT ...
 // #define  _WIN32_WINNT 0x0500
@@ -82,7 +85,7 @@ extern "C" WINBASEAPI COORD WINAPI GetConsoleFontSize(
 //
 // Structure to send console via WM_SETCONSOLEINFO
 //
-typedef struct _CONSOLE_INFO
+typedef struct _CONSOLE_INFO  // NOLINT(bugprone-reserved-identifier)
 {
    ULONG    Length;
    COORD    ScreenBufferSize;
@@ -306,7 +309,7 @@ static unsigned make_brighter(unsigned utemp, double brighten)
 int read_palette_file(char *palette_name, double brighten)
 {
    int rdbytes ;
-   ul2uc_t uconv ;
+   ul2uc_t uconv {};
    u8 pdata[65] ;
    u8 *uptr ;
    unsigned utemp, j ;
@@ -396,7 +399,7 @@ static void UpdateConsole2File(void)
 {
    static char inpstr[1024] ;
    // static char pstr[60] ;
-   ul2uc_t uconv ;
+   ul2uc_t uconv {};
    //  let's change the default from "current directory" to
    //  <consattr.exe directory>\\console2
    //  so I can put console2 directory under utility.
@@ -466,6 +469,7 @@ static void UpdateConsole2File(void)
          fputs(inpstr, fdout) ;
          break;
 
+      // <color id="0" r="18" g="40" b="0"/>
       case 1:  //  parsing color entries
          if (strnicmp(dptr, "</colors>", 9) == 0) {
             printf("exit colors section, %u lines written\n", clines) ;
@@ -479,12 +483,12 @@ static void UpdateConsole2File(void)
          // <color id="0" r="0" g="0" b="0"/>
          if (strnicmp(dptr, "<color", 6) != 0) {
             printf("invalid color entry (c): %s", dptr) ;
-            return ;
+            goto error_exit;
          }
          hd = next_field(dptr) ;
          if (strnicmp(hd, "id=", 3) != 0) {
             printf("invalid color entry (i): %s", hd) ;
-            return ;
+            goto error_exit;
          }
          hd += 4 ;
          id = atoi(hd) ;
@@ -502,15 +506,39 @@ static void UpdateConsole2File(void)
             34, (unsigned) uconv.uc[1], 34, 
             34, (unsigned) uconv.uc[2], 34) ;
          clines++ ;
-
          break;
 
+      case 2:  //  look for separate background field
+         //  If you find </console> label, just abort
+         if (strnicmp(dptr, "</console", 9) == 0) {
+            printf("found end of console section, bypassing background search\n") ;
+            fputs(inpstr, fdout) ;
+            pstate = 3 ;
+         }
+         // <background type="0" r="18" g="40" b="0">
+         else if (strnicmp(dptr, "<background", 11) == 0) {
+            printf("found background section, updating\n") ;
+            uconv.ul = curr_attr[0] ;
+            fprintf(fdout, "\t\t\t<background type=%c0%c r=%c%u%c g=%c%u%c b=%c%u%c>\n", 
+               34, 34,
+               34, (unsigned) uconv.uc[0], 34, 
+               34, (unsigned) uconv.uc[1], 34, 
+               34, (unsigned) uconv.uc[2], 34) ;
+            clines++ ;
+            pstate = 3 ;
+         }
+         else {
+            fputs(inpstr, fdout) ;
+         }
+         break ;
+         
       default: //  echo everything else to output
          fputs(inpstr, fdout) ;
          break;
       }
 
    }
+error_exit:
    fclose(fdin) ;
    fclose(fdout) ;
    printf("Updated %s successfully\n", orig_name) ;

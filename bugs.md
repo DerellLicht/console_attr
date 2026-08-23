@@ -1,5 +1,3 @@
-- Setting console colors isn't quite working right for ConsoleZ
-
 - update help file
   > document the settings for manually setting the screen position of the color dialog:
   
@@ -13,7 +11,7 @@
   This can easily be done by using "Launch console"
   1. close ConsoleZ
   2. open a console via "Launch console" in `console_attr.exe`
-  3. run `consattr -x<path to ConsoleZ folder> palette_name`
+  3. run `consattr -x<path_to_ConsoleZ_folder> palette_name`
   4. open ConsoleZ
   
 - update comments about this project, on web site
