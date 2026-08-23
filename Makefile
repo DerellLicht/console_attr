@@ -37,7 +37,8 @@ ifeq ($(USE_STATIC),YES)
 LFLAGS += -static
 endif
 
-CPPSRC=dialog.cpp console.attr.cpp config.cpp ClearIcon.cpp claude_browsers.cpp \
+CPPSRC=dialog.cpp console.attr.cpp config.cpp ClearIcon.cpp \
+der_libs/claude_browsers.cpp \
 der_libs/common_funcs.cpp \
 der_libs/common_win.cpp 
 # der_libs/qualify.cpp 
@@ -91,10 +92,11 @@ dlgres.o: dlgres.rc resource.h
 # DO NOT DELETE
 
 dialog.o: resource.h der_libs/common.h der_libs/commonw.h console.attr.h
-dialog.o: claude_browsers.h config.h
+dialog.o: der_libs/claude_browsers.h config.h
 console.attr.o: der_libs/common.h console.attr.h
 config.o: der_libs/common.h console.attr.h config.h
 ClearIcon.o: der_libs/common.h der_libs/commonw.h console.attr.h config.h
-claude_browsers.o: der_libs/common.h der_libs/commonw.h claude_browsers.h
+der_libs/claude_browsers.o: der_libs/common.h der_libs/commonw.h
+der_libs/claude_browsers.o: der_libs/claude_browsers.h
 der_libs/common_funcs.o: der_libs/common.h
 der_libs/common_win.o: der_libs/common.h der_libs/commonw.h
