@@ -75,8 +75,8 @@ const COMDLG_FILTERSPEC ExecFilter[] = {
 //********************************************************
 //  ini variables
 //********************************************************
-char palette_filename[MAX_PATH_LEN+1] = "" ;
 char cmd_proc_filename[MAX_PATH_LEN+1] = "C:\\WINDOWS\\SYSTEM32\\cmd.exe" ;  // NOLINT(modernize-raw-string-literal)
+char palette_filename[MAX_PATH_LEN+1] = "" ;
 char starting_path[MAX_PATH_LEN+1] = "C:\\download" ;
 double brighten = 3.0 ;
 
@@ -85,6 +85,10 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 #define CrSampleFont EzCreateFont (hdc, "Courier New", 150, 0, EZ_ATTR_BOLD, 0, TRUE)
 #define CrDataFont EzCreateFont (hdc, "Bodacious-Normal", 150, 0, 0, 0, TRUE)
 // #define CrLabelFont EzCreateFont (hdc, "Times New Roman", 150, 0, 0, 0, TRUE)
+
+static GUID guidComprocPath  = MakeStableGuidFromLabel("console_attr.ComprocPath");
+static GUID guidPalettePath  = MakeStableGuidFromLabel("console_attr.PalettePath");
+static GUID guidStartingPath = MakeStableGuidFromLabel("console_attr.StartingPath");
 
 //*******************************************************************************
 int setup_palette_filename()
@@ -589,7 +593,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
       case IDC_BUTTON2:   //  select command processor
          {
          std::wstring fileExec;
-         if (BrowseForFile(hDlgWnd, fileExec, ExecFilter, ARRAYSIZE(ExecFilter))) {
+         if (BrowseForFile(hDlgWnd, fileExec, ExecFilter, ARRAYSIZE(ExecFilter), &guidComprocPath)) {
              // use file
             std::string fileExecA = WideToNarrow(fileExec);
          
@@ -606,7 +610,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          char oldFile[MAX_PATH_LEN];       // buffer for file name
          // const COMDLG_FILTERSPEC PalFilter[] = {
          std::wstring filePal;
-         if (BrowseForFile(hDlgWnd, filePal, PalFilter, ARRAYSIZE(PalFilter))) {
+         if (BrowseForFile(hDlgWnd, filePal, PalFilter, ARRAYSIZE(PalFilter), &guidPalettePath)) {
              // use file
             std::string filePalA = WideToNarrow(filePal);
          
@@ -629,7 +633,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          {
          // return select_starting_directory(hDlgWnd);
          std::wstring folder;
-         if (BrowseForFolder(hDlgWnd, folder)) {
+         if (BrowseForFolder(hDlgWnd, folder, &guidStartingPath)) {
             std::string folderA = WideToNarrow(folder);
             strncpy(starting_path, folderA.c_str(), sizeof(starting_path)) ;
             // syslog("browse returned: %s\n", folderA.c_str());
@@ -668,8 +672,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          // const COMDLG_FILTERSPEC PalFilter[] = {
          char oldFile[MAX_PATH_LEN];       // buffer for file name
          std::wstring filePal;
-      // if (BrowseForFileSave(hwndMain, file, filters, ARRAYSIZE(filters), L"untitled.cfg")) {
-         if (BrowseForFileSave(hDlgWnd, filePal, PalFilter, ARRAYSIZE(PalFilter), L"untitled.pal")) {
+         if (BrowseForFileSave(hDlgWnd, filePal, PalFilter, ARRAYSIZE(PalFilter), L"untitled.pal", &guidPalettePath)) {
              // use file
             std::string filePalA = WideToNarrow(filePal);
             

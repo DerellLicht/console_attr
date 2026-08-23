@@ -61,7 +61,7 @@
 
 //***********************************************************************
 // alt_fg_attr=0x41c345
-unsigned ci_attr = 0x41c345 ;
+// unsigned ci_attr = 0x41c345 ;
 
 uint color_x0 = 700 ;
 uint color_y0 = 300 ;
