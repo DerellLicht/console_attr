@@ -4,6 +4,7 @@
 *.xml
 *.exe
 *.bak
+*.zip
 execs/
 output.txt
 

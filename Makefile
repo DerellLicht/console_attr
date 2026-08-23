@@ -59,11 +59,11 @@ BINS = $(BIN).exe
 all: $(BINS)
 
 clean:
-	rm -f $(OBJS) *.exe *~ *.zip
+	rm -f $(OBJS) $(BINS) *~ *.zip
 
 dist:
 	rm -f $(BIN).zip
-	zip $(BIN).zip $(BINS) Readme.md LICENSE.txt
+	zip $(BIN).zip *.exe console_attr.chm Readme.md LICENSE.txt
 
 wc:
 	wc -l $(CPPSRC)
