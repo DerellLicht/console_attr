@@ -1,10 +1,9 @@
-#define INITGUID
+// #define INITGUID
 #include <windows.h>
 #include <cstdio>   //  sprintf, needed for double
 #include <cstdlib>  //  _MAX_PATH
 #include <sys/stat.h>
 #include <string>
-#include <shlobj.h>
 #include <shobjidl.h>   // IFileDialog, IShellItem
 
 #include "common.h"

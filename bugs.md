@@ -8,6 +8,8 @@
 - Extract the Claude dialog functions into a separate file,
   document the data structs, move into `der_libs`  
   
+  Document that `-luuid` is required for any project that links this file
+  
 - it would be nice if console_attr could generate ConsoleZ's `.xml` file as well  
 
 - Makefile: update `make dist` to zip up the required files

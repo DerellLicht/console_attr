@@ -19,14 +19,13 @@
 
 static char szClassName[] = "Console Palette Changer V1.05" ;
 
-#define INITGUID
 #include <windows.h>
 #include <cstdio>   //  sprintf, needed for double
 #include <cstdlib>  //  _MAX_PATH
 #include <sys/stat.h>
 #include <string>
 #include <shlobj.h>
-#include <shobjidl.h>   // IFileDialog, IShellItem
+// #include <shobjidl.h>   // IFileDialog, IShellItem
 #include <htmlhelp.h>
 
 #include "resource.h"
