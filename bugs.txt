@@ -1,0 +1,6 @@
+- On the website, the "history" section should begin with something like
+  "in the beginning, there was `prism` ... spend some time on that, 
+  then move on to my software...
+  
+  I probably should make the prism sources available on my site, as well.
+    

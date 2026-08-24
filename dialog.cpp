@@ -35,7 +35,7 @@
 static char szClassName[] = "Console Palette Changer " VerNumA  ;
 
 #define BUFFER_SIZE 256
-static unsigned dirty_flag = 0 ;
+static bool dirty_flag = false ;
 
 static char szText[BUFFER_SIZE];
 static HBRUSH g_hbrBackground = (HBRUSH) (COLOR_WINDOW + 1) ;
@@ -625,7 +625,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
                syslog("%s: %s", palette_filename, strerror(result)) ;
                strncpy(palette_filename, oldFile, sizeof(palette_filename)) ;
             }
-            dirty_flag = 1 ;
+            dirty_flag = true ;
             SetFocus(hDlgWnd) ;  //  this generates WM_PAINT, to redraw the text controls
          }
          }
@@ -648,7 +648,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
 
       case IDC_BUTTON5:   //  write settings to registry
          write_all_consoles() ;
-         dirty_flag = 0 ;
+         dirty_flag = false ;
          return TRUE;
       break;
 
@@ -656,7 +656,7 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          if (dirty_flag) {
             // syslog("writing dirty buffers\n") ;
             write_all_consoles() ;
-            dirty_flag = 0 ;
+            dirty_flag = false ;
          }
          {
          char tempstr[1024] ;
@@ -728,8 +728,16 @@ static BOOL CALLBACK InitProc( HWND hDlgWnd, UINT Message, WPARAM wParam, LPARAM
          {
          unsigned idx = LOWORD(wParam)  % 16 ;
          // syslog("edit palette entry %u", idx) ;
-         select_color(idx) ;
-         dirty_flag = 1 ;
+         //  actually, this has to send the palette entry...
+         // select_color(idx) ;
+         uint temp_attr = select_color(curr_attr[idx]) ;
+         //  if user cancels color entry, 
+         //  stick with existing color selection.
+         if (temp_attr != 0) {
+            curr_attr[idx] = temp_attr ;
+            // save_cfg_file();
+         }
+         dirty_flag = true ;
          SetFocus(hDlgWnd) ;
          return TRUE ;
          }         
