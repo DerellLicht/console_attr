@@ -2,10 +2,9 @@
 *.ini
 *.chm
 *.xml
-*.exe
 *.bak
+*.exe
 *.zip
-execs/
 output.txt
 
                   
