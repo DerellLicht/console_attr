@@ -3,7 +3,8 @@
 *.chm
 *.xml
 *.bak
-*.exe
+console_attr.exe
+consattr.exe
 *.zip
 output.txt
 
