@@ -62,7 +62,7 @@ clean:
 
 dist:
 	rm -f *.zip
-	zip console.palette.chgr.zip *.exe console_attr.chm Readme.md LICENSE.txt palettes
+	zip console.palette.chgr.zip *.exe console_attr.chm Readme.md LICENSE.txt palettes CHANGELOG.md
 	zip -r console.palette.chgr.zip palettes\*
 	
 
